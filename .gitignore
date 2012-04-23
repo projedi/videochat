@@ -1,0 +1,6 @@
+*.user
+*.o
+videochat-oldapi
+ui_mainwindow.h
+moc_mainwindow.cpp
+Makefile

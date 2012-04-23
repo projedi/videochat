@@ -6,13 +6,19 @@
 
 QT       += core gui
 
+CONFIG += link_pkgconfig
+PKGCONFIG += opencv
+#INCLUDEPATH += /usr/include/c++/4.7.0/
+
 TARGET = videochat-oldapi
 TEMPLATE = app
 
 
 SOURCES += main.cpp\
-        mainwindow.cpp
+        mainwindow.cpp \
+    webcam.cpp
 
-HEADERS  += mainwindow.h
+HEADERS  += mainwindow.h \
+    webcam.h
 
 FORMS    += mainwindow.ui
