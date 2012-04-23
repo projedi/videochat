@@ -5,6 +5,8 @@
 #include <QTimer>
 #include <QImage>
 #include "webcam.h"
+#include "converter.h"
+#include <list>
 
 namespace Ui {
 class MainWindow;
@@ -26,8 +28,9 @@ private slots:
 
 private:
     Ui::MainWindow *ui;
-    QTimer* timer;
+    QTimer* timerDraw;
     struct Webcam* webcam;
+    std::list<uchar*> hist;
 };
 
 #endif // MAINWINDOW_H

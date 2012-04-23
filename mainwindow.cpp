@@ -6,10 +6,11 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    timer = new QTimer(this);
-    QTimer::connect(timer,SIGNAL(timeout()),this,SLOT(update()));
-    timer->start(ui->webcamTimerSpinBox->value());
+    timerDraw = new QTimer(this);
+    QTimer::connect(timerDraw,SIGNAL(timeout()),this,SLOT(update()));
+    timerDraw->start(ui->webcamTimerSpinBox->value());
     webcam = init();
+    ffinit();
 }
 
 MainWindow::~MainWindow()
@@ -19,7 +20,13 @@ MainWindow::~MainWindow()
 
 void MainWindow::update(){
     cout << "Wouza!" << endl;
-    QImage img(getData(webcam),webcam->width,webcam->height,QImage::Format_RGB888);
+    uchar* data = getData(webcam);
+    if(hist.size() == 10){
+        convert(hist);
+        hist.clear();
+    }
+    hist.push_back(data);
+    QImage img(data,webcam->width,webcam->height,QImage::Format_RGB888);
     //img.scaled(ui->label->width(), ui->label->height());
     ui->labelWebcam->setPixmap(QPixmap::fromImage(img));
 }
