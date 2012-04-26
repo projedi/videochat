@@ -7,20 +7,21 @@
 QT       += core gui
 
 CONFIG += link_pkgconfig
-PKGCONFIG += opencv libavcodec libavformat
+PKGCONFIG += libavcodec libavformat libavdevice libswscale libavutil opencv
+#LIBS += -lavcodec -lavformat -lavdevice
 #INCLUDEPATH += /usr/include/c++/4.7.0/
+QMAKE_CXXFLAGS = -D__STDC_CONSTANT_MACROS
 
 TARGET = videochat-oldapi
 TEMPLATE = app
 
-
 SOURCES += main.cpp\
         mainwindow.cpp \
-    webcam.cpp \
-    converter.c
+    cvwebcam.cpp \
+    ffwebcam.cpp
 
 HEADERS  += mainwindow.h \
-    webcam.h \
-    converter.h
+    cvwebcam.h \
+    ffwebcam.h
 
 FORMS    += mainwindow.ui

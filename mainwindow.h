@@ -4,8 +4,7 @@
 #include <QMainWindow>
 #include <QTimer>
 #include <QImage>
-#include "webcam.h"
-#include "converter.h"
+#include "ffwebcam.h"
 #include <list>
 
 namespace Ui {
@@ -18,19 +17,15 @@ class MainWindow : public QMainWindow
     
 public:
     explicit MainWindow(QWidget *parent = 0);
-    ~MainWindow();
-
-public slots:
-    void update();
+    ~MainWindow();   
     
 private slots:
     void on_spinBox_valueChanged(int arg1);
+    void updateFrame(QImage frame);
 
 private:
     Ui::MainWindow *ui;
-    QTimer* timerDraw;
-    struct Webcam* webcam;
-    std::list<uchar*> hist;
+    Webcam* webcam;
 };
 
 #endif // MAINWINDOW_H
