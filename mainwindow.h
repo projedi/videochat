@@ -21,7 +21,7 @@ public:
     
 private slots:
     void on_spinBox_valueChanged(int arg1);
-    void updateFrame(QImage frame);
+    void updateFrame(QImage* frame);
 
 private:
     Ui::MainWindow *ui;

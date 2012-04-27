@@ -2,10 +2,11 @@
 #define FFWEBCAM_H
 
 extern "C" {
-    #include <libavcodec/avcodec.h>
-    #include <libavformat/avformat.h>
-    #include <libavdevice/avdevice.h>
-    #include <libswscale/swscale.h>
+   #include <libavcodec/avcodec.h>
+   #include <libavformat/avformat.h>
+   #include <libavdevice/avdevice.h>
+   #include <libswscale/swscale.h>
+   #include <libavutil/opt.h>
 }
 
 #include <QImage>
@@ -24,24 +25,42 @@ struct WebcamParams {
 
 WebcamParams defaultParams();
 
+/*
+class FFSinkInput: public QObject {
+   Q_OBJECT
+public:
+   FFSinkInput();
+   ~FFSinkInput();
+private:
+};
+*/
+
 class Webcam: public QObject {
     Q_OBJECT
 public:
     Webcam(WebcamParams params);
+    ~Webcam();
     void start();
     void stop();
 signals:
-    void frameArrived(QImage frame);
+    void frameArrived(QImage* frame);
 private slots:
     void grabTimerTimeout();
 private:
     QTimer* grabTimer;
     WebcamParams params;
-    AVFormatContext* inputFormatContext;
-    AVStream* inputStream;
-    AVCodecContext* avctx;
-    SwsContext* img_convert_ctx;
-    AVPicture* pict;
+
+    AVFormatContext* inputFormat;
+    AVCodecContext* inputCodec;
+
+    AVFormatContext* outputFormat;
+    AVCodecContext* outputCodec;
+    AVStream* video_st;
+
+    SwsContext* convertQt;
+    SwsContext* convertStream;
+
+    int pts;
 };
 
 #endif // FFWEBCAM_H
