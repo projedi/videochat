@@ -6,9 +6,12 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    webcam = new Webcam(defaultParams());
-    connect(webcam,SIGNAL(frameArrived(QImage*)),this,SLOT(updateFrame(QImage*)));
-    webcam->start();
+    ffmpeg = new FFmpeg();
+    FFInput* camera = ffmpeg->addInput("/dev/video0", "v4l2");
+    FFOutput* server = ffmpeg->addOutput("udp://localhost:8080", "m4v", "h263");
+    ffmpeg->connectIO(camera,server);
+    connect(ffmpeg,SIGNAL(cameraFrame(uint8_t*,int,int))
+           ,this,SLOT(updateFrame(uint8_t*,int,int)));
 }
 
 MainWindow::~MainWindow()
@@ -16,7 +19,7 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::updateFrame(QImage* frame){
+void MainWindow::updateFrame(uint8_t* frame, int width, int height){
     ui->labelWebcam->setPixmap(QPixmap::fromImage(*frame));
     delete frame;
 }

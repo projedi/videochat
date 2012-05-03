@@ -17,50 +17,56 @@ extern "C" {
 using namespace std;
 
 struct WebcamParams {
-    int device_id;
-    int fps;
-    int bufferSize;
-    int port;
+   char* video_size;
+   char* device_name;
+   int fps;
 };
 
 WebcamParams defaultParams();
 
-/*
-class FFSinkInput: public QObject {
-   Q_OBJECT
-public:
-   FFSinkInput();
-   ~FFSinkInput();
-private:
-};
-*/
-
 class Webcam: public QObject {
     Q_OBJECT
 public:
+    static char* listDevices();
     Webcam(WebcamParams params);
     ~Webcam();
-    void start();
-    void stop();
 signals:
-    void frameArrived(QImage* frame);
-private slots:
-    void grabTimerTimeout();
+    void frameArrived(AVFrame* frame);
 private:
-    QTimer* grabTimer;
     WebcamParams params;
 
-    AVFormatContext* inputFormat;
-    AVCodecContext* inputCodec;
+    AVFormatContext* formatContext;
+    AVCodecContext* codecContext;
+    AVCodec* decoder
 
-    AVFormatContext* outputFormat;
-    AVCodecContext* outputCodec;
-    AVStream* video_st;
+    void mainLoop();
 
     SwsContext* convertQt;
     SwsContext* convertStream;
 
     int pts;
 };
+
+struct ServerParams {
+   char* video_size;
+   int port;
+   int fps;
+   char* format;
+   char* codec;
+}
+
+class Server: public QObject {
+   Q_OBJECT
+public:
+   Server(ServerParams params);
+   ~Server();
+public slots:
+   void onFrameArrived(AVFrame* frame);
+private:
+   ServerParams params;
+   AVFormatContext* outputFormat;
+   AVCodecContext* outputCodec;
+   AVStream* video_st;
+}
 
 #endif // FFWEBCAM_H

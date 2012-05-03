@@ -5,62 +5,49 @@ const PixelFormat STREAM_PIX_FMT = PIX_FMT_YUV420P;
 
 WebcamParams defaultParams() {
     WebcamParams params;
+    params.video_size = "sd";
     params.device_id = 0;
     params.fps = 25;
-    params.bufferSize = 10;
-    params.port = 8080;
     return params;
 }
 
-/*
-FFSinkInput::FFSinkInput() {
-   char* name = "/dev/video0";
-   char* fmtname = "v4l2";
-   AVFormatContext* fmtCtx = avformat_alloc_context();
-   if(avformat_open_input(&fmtCtx,name,av_find_input_format(fmtname),0) < 0)
-      throw "Can't open webcam";
-   if(avformat_find_stream_info(fmtCtx,0) < 0) throw "Can't find stream info";
-   AVCodecContext* codecCtx = fmt->streams[0]->codec;
-   if(!codecCtx) throw "Can't get codec info";
-   AVCodec* decoder = avcodec_find_decoder(codecCtx->codec_id);
-}
-*/
-
 Webcam::Webcam(WebcamParams params) {
    this->params = params;
-   grabTimer = new QTimer();
-   connect(grabTimer,SIGNAL(timeout()),this,SLOT(grabTimerTimeout()));
-   const AVOption* opt = 0;
+   AVDictionary* options = 0;
+   av_dict_set(&options, "video_size", params.size, 0);
+   av_dict_set(&options, "framerate", params.fps, 0);
+   if(avformat_open_input(&formatContext,params.device_name,0,0) < 0)
+      throw "Can't open input";
+   av_dict_free(&options);
+   if(avformat_find_stream_info(formatContext,0) < 0) throw "Can't find stream info";
+   int streamID = av_find_best_stream(formatContext,AVMEDIA_TYPE_VIDEO,-1,-1,&decoder,0);
+   if(streamID < 0) throw "Can't find best stream";
+   codecContext = formatContext->streams[streamID]->codec;
+   if(avcodec_open2(codecContext,decoder,0) < 0) cout << "cant associate codec on input\n";
+   QtConcurrent::run(Webcam::mainLoop);
+}
 
-   // Constructing input sink
-   inputFormat = avformat_alloc_context();
-   // TODO v4l2 and device number
-   if(avformat_open_input(&inputFormat,"/dev/video0",av_find_input_format("v4l2"),0) < 0)
-      cout << "Can't open device\n";
-   if(avformat_find_stream_info(inputFormat,0) < 0) cout << "Cant find stream info\n";
-   inputCodec = inputFormat->streams[0]->codec;
-   if(!inputCodec) cout << "Cant get codec context\n";
-   AVCodec* decoder = avcodec_find_decoder(inputCodec->codec_id);
-   if(!decoder) cout << "Can't find decoder\n";
-   cout << "Format options:\n";
-   for(;;) {
-      opt = av_opt_next(inputFormat, opt);
-      if(!opt) break;
-      cout << opt->name;
-      if(opt->unit != 0) cout << "(" << opt->unit << ")";
-      if(opt->help != 0) cout << ": " << opt->help;
-      cout << endl;
+void Webcam::mainLoop() {
+   AVPacket pkt;
+   AVFrame* frame;
+   int frameFinished;
+   while(1) {
+      frame = avcodec_alloc_frame();
+      frameFinished = 0;
+      while(!frameFinished) {
+         if(av_read_frame(formatContext,&pkt) < 0) cout << "cant read frame\n";
+         if(avcodec_decode_video2(codecContext,frame,&frameFinished,&pkt) < 0)
+            cout << "cant decode pkt\n";
+      }
+      // TODO should copy instead
+      emit frameArrived(frame);
    }
-   cout << "Codec options:\n";
-   for(;;) {
-      opt = av_opt_next(inputCodec, opt);
-      if(!opt) break;
-      cout << opt->name;
-      if(opt->unit != 0) cout << "(" << opt->unit << ")";
-      if(opt->help != 0) cout << ": " << opt->help;
-      cout << endl;
-   }
-   if(avcodec_open2(inputCodec,decoder,0) < 0) cout << "cant associate codec on input\n";
+   av_free_packet(&pkt);
+}
+
+Server::Server(ServerParams params) {
+   this->params = params;
+   const AVOption* opt = 0;
 
    //Constructing output sink
    char* filename = "udp://localhost:8080?ttl=10";
@@ -84,6 +71,7 @@ Webcam::Webcam(WebcamParams params) {
    if(fmt->flags & AVFMT_GLOBALHEADER) outputCodec->flags |= CODEC_FLAG_GLOBAL_HEADER;
    //const AVOption* opt = av_opt_find(outputFormat,"ts",0,0,0);
    //cout << opt->name << ": " << opt->help << endl;
+   /*
    cout << "Format options:\n";
    for(;;) {
       opt = av_opt_next(outputFormat, opt);
@@ -102,6 +90,7 @@ Webcam::Webcam(WebcamParams params) {
       if(opt->help != 0) cout << ": " << opt->help;
       cout << endl;
    }
+   */
    if(avcodec_open2(outputCodec,encoder,0) < 0) 
       cout << "cant associate codec on output\n";
 
