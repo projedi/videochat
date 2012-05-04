@@ -10,57 +10,75 @@ extern "C" {
 }
 
 #include <QImage>
-#include <QTimer>
 #include <QObject>
+#include <QtConcurrentRun>
+#include <QFutureWatcher>
 
 #include <iostream>
 using namespace std;
 
-struct WebcamParams {
-    int device_id;
-    int fps;
-    int bufferSize;
-    int port;
-};
-
-WebcamParams defaultParams();
-
-/*
-class FFSinkInput: public QObject {
+class Server: public QObject {
    Q_OBJECT
 public:
-   FFSinkInput();
-   ~FFSinkInput();
+   Server(char* name, char* fmt, CodecID codecID);
+   ~Server();
+   int getWidth() { return codec->width; }
+   int getHeight() { return codec->height; }
+   PixelFormat getPixelFormat() { return codec->pix_fmt; }
+public slots:
+   void sendFrame(AVFrame* frame);
 private:
+   AVCodecContext* codec;
+   AVFormatContext* format;
+   AVStream* video_st;
+   int bufsize;
+   AVPacket pkt;
+   bool isBusy;
 };
-*/
 
-class Webcam: public QObject {
-    Q_OBJECT
+class Client: public QObject {
+   Q_OBJECT
 public:
-    Webcam(WebcamParams params);
-    ~Webcam();
-    void start();
-    void stop();
+   Client(char* name, char* fmt = 0);
+   ~Client();
+   int getWidth() { initFuture.waitForFinished(); return codec->width; }
+   int getHeight() { initFuture.waitForFinished(); return codec->height; }
+   PixelFormat getPixelFormat() { initFuture.waitForFinished(); return codec->pix_fmt; }
 signals:
-    void frameArrived(QImage* frame);
-private slots:
-    void grabTimerTimeout();
+   void newFrame(AVFrame* frame);
 private:
-    QTimer* grabTimer;
-    WebcamParams params;
+   void init();
+   void worker();
 
-    AVFormatContext* inputFormat;
-    AVCodecContext* inputCodec;
+   QFutureWatcher<void> initFuture;
+   QFutureWatcher<void> workerFuture;
+   AVFormatContext* format;
+   AVCodecContext* codec;
+   bool isStopped;
+   int pts;
+};
 
-    AVFormatContext* outputFormat;
-    AVCodecContext* outputCodec;
-    AVStream* video_st;
-
-    SwsContext* convertQt;
-    SwsContext* convertStream;
-
-    int pts;
+class FFmpeg: public QObject {
+   Q_OBJECT
+public:
+   FFmpeg();
+   ~FFmpeg();
+signals:
+   void newRawCameraFrame(uint8_t* data, int width, int height);
+   void newRawRemoteFrame(uint8_t* data, int width, int height);
+   void newServerFrame(AVFrame* frame);
+private slots:
+   void onCameraFrame(AVFrame* frame);
+   void onRemoteFrame(AVFrame* frame);
+   void onRemoteConstruction();
+private:
+   Server* server;
+   Client* camera;
+   Client* remote;
+   QFutureWatcher<Client*> remoteFuture;
+   SwsContext* cameraToServer;
+   SwsContext* cameraToLocal;
+   SwsContext* remoteToLocal;
 };
 
 #endif // FFWEBCAM_H

@@ -20,12 +20,13 @@ public:
     ~MainWindow();   
     
 private slots:
-    void on_spinBox_valueChanged(int arg1);
-    void updateFrame(QImage* frame);
+   void updateFrame(uint8_t* data, int width, int height);
+   void updateRemoteFrame(uint8_t* data, int width, int height);
 
 private:
     Ui::MainWindow *ui;
-    Webcam* webcam;
+    //Webcam* webcam;
+    FFmpeg* ffmpeg;
 };
 
 #endif // MAINWINDOW_H

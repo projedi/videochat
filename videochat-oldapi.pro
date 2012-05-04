@@ -7,7 +7,7 @@
 QT       += core gui
 
 CONFIG += link_pkgconfig
-PKGCONFIG += libavcodec libavformat libavdevice libswscale libavutil opencv
+PKGCONFIG += libavcodec libavformat libavdevice libswscale libavutil
 #LIBS += -lavcodec -lavformat -lavdevice
 #INCLUDEPATH += /usr/include/c++/4.7.0/
 QMAKE_CXXFLAGS = -D__STDC_CONSTANT_MACROS
@@ -17,11 +17,9 @@ TEMPLATE = app
 
 SOURCES += main.cpp\
         mainwindow.cpp \
-    cvwebcam.cpp \
     ffwebcam.cpp
 
 HEADERS  += mainwindow.h \
-    cvwebcam.h \
     ffwebcam.h
 
 FORMS    += mainwindow.ui
