@@ -62,8 +62,10 @@ void MainWindow::on_pushButtonStartReceive_clicked(){
 }
 
 void MainWindow::on_pushButtonStartSend_clicked() {
+    cout << "sending button clicked\n";
    QString dri = ui->comboBoxLocalFormat->currentText();
    QString name = ui->lineEditLocalPath->text();
+
    camera = new Client(name,dri);
    QString uri = "udp://localhost:";
    QString port = ui->lineEditLocalPort->text();
@@ -81,15 +83,19 @@ void MainWindow::on_pushButtonStartSend_clicked() {
    int fps = 25;
    int gop_size = 12;
    server = new Server(uri,fmt,codec,wi,he,bitrate,fps,gop_size);
+   cout << "After server construction\n";
+
    int cw = camera->getWidth();
    int ch = camera->getHeight();
    PixelFormat cpf = camera->getPixelFormat();
+   cout << "After getting camera props\n";
    int sw = server->getWidth();
    int sh = server->getHeight();
    PixelFormat spf = server->getPixelFormat();
    int w = ui->labelWebcam->width();
    int h = ui->labelWebcam->height();
    PixelFormat pf = PIX_FMT_RGB32;
+   cout << "Before sws\n";
    cameraToLocal = sws_getCachedContext(0,cw,ch,cpf,w,h,pf,SWS_BICUBIC,0,0,0);
    connect(camera,SIGNAL(newFrame(AVFrame*)),this,SLOT(onCameraFrame(AVFrame*))
           ,Qt::QueuedConnection);
@@ -97,4 +103,6 @@ void MainWindow::on_pushButtonStartSend_clicked() {
                                         ,sw,sh,spf,SWS_BICUBIC,0,0,0);
    connect(this,SIGNAL(newServerFrame(AVFrame*)),server,SLOT(onFrame(AVFrame*))
           ,Qt::QueuedConnection);
+   cout << "At the end actually\n";
+
 }

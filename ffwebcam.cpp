@@ -87,7 +87,6 @@ void Client::init() {
    codec = format->streams[0]->codec;
    if(!codec) cout << "Cant get codec context\n";
    AVCodec* decoder;
-   cout << codec->codec_id << endl;
    if(!codec->codec_id) {
       cout << "Improper hi\n";
       decoder = avcodec_find_decoder(CODEC_ID_JPEG2000);
@@ -105,7 +104,9 @@ void Client::init() {
       decoder = avcodec_find_decoder(codec->codec_id);
    }
    if(!decoder) cout << "Can't find decoder\n";
+   cout << "Just before opening codec\n";
    if(avcodec_open2(codec,decoder,0) < 0) cout << "cant associate codec on input\n";
+   cout << "Client inits properly\n";
 }
 
 void Client::worker() {

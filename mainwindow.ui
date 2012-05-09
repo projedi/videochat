@@ -134,7 +134,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>/dev/video0</string>
+     <string>0</string>
     </property>
    </widget>
    <widget class="QPushButton" name="pushButtonStartReceive">
@@ -256,12 +256,12 @@
     </property>
     <item>
      <property name="text">
-      <string>v4l2</string>
+      <string>vfwcap</string>
      </property>
     </item>
     <item>
      <property name="text">
-      <string>vfw</string>
+      <string>v4l2</string>
      </property>
     </item>
    </widget>
