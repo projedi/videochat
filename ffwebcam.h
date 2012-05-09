@@ -13,6 +13,7 @@ extern "C" {
 #include <QObject>
 #include <QtConcurrentRun>
 #include <QFutureWatcher>
+#include <QMutexLocker>
 
 #include <iostream>
 using namespace std;
@@ -20,26 +21,28 @@ using namespace std;
 class Server: public QObject {
    Q_OBJECT
 public:
-   Server(char* name, char* fmt, CodecID codecID);
+   Server(QString name, QString fmt, CodecID codecID, int w, int h, int bitrate, int fps
+         ,int gop_size);
    ~Server();
    int getWidth() { return codec->width; }
    int getHeight() { return codec->height; }
    PixelFormat getPixelFormat() { return codec->pix_fmt; }
 public slots:
-   void sendFrame(AVFrame* frame);
+   void onFrame(AVFrame* frame);
 private:
    AVCodecContext* codec;
    AVFormatContext* format;
    AVStream* video_st;
    int bufsize;
    AVPacket pkt;
-   bool isBusy;
+   //bool isBusy;
+   QMutex mutex;
 };
 
 class Client: public QObject {
    Q_OBJECT
 public:
-   Client(char* name, char* fmt = 0);
+   Client(QString name, QString fmt);
    ~Client();
    int getWidth() { initFuture.waitForFinished(); return codec->width; }
    int getHeight() { initFuture.waitForFinished(); return codec->height; }
@@ -56,29 +59,6 @@ private:
    AVCodecContext* codec;
    bool isStopped;
    int pts;
-};
-
-class FFmpeg: public QObject {
-   Q_OBJECT
-public:
-   FFmpeg();
-   ~FFmpeg();
-signals:
-   void newRawCameraFrame(uint8_t* data, int width, int height);
-   void newRawRemoteFrame(uint8_t* data, int width, int height);
-   void newServerFrame(AVFrame* frame);
-private slots:
-   void onCameraFrame(AVFrame* frame);
-   void onRemoteFrame(AVFrame* frame);
-   void onRemoteConstruction();
-private:
-   Server* server;
-   Client* camera;
-   Client* remote;
-   QFutureWatcher<Client*> remoteFuture;
-   SwsContext* cameraToServer;
-   SwsContext* cameraToLocal;
-   SwsContext* remoteToLocal;
 };
 
 #endif // FFWEBCAM_H
