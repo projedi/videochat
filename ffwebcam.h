@@ -10,63 +10,55 @@ extern "C" {
 }
 
 #include <QImage>
-#include <QTimer>
 #include <QObject>
+#include <QtConcurrentRun>
+#include <QFutureWatcher>
+#include <QMutexLocker>
 
 #include <iostream>
 using namespace std;
 
-struct WebcamParams {
-   char* video_size;
-   char* device_name;
-   int fps;
-};
-
-WebcamParams defaultParams();
-
-class Webcam: public QObject {
-    Q_OBJECT
-public:
-    static char* listDevices();
-    Webcam(WebcamParams params);
-    ~Webcam();
-signals:
-    void frameArrived(AVFrame* frame);
-private:
-    WebcamParams params;
-
-    AVFormatContext* formatContext;
-    AVCodecContext* codecContext;
-    AVCodec* decoder
-
-    void mainLoop();
-
-    SwsContext* convertQt;
-    SwsContext* convertStream;
-
-    int pts;
-};
-
-struct ServerParams {
-   char* video_size;
-   int port;
-   int fps;
-   char* format;
-   char* codec;
-}
-
 class Server: public QObject {
    Q_OBJECT
 public:
-   Server(ServerParams params);
+   Server(QString name, QString fmt, CodecID codecID, int w, int h, int bitrate, int fps
+         ,int gop_size);
    ~Server();
+   int getWidth() { return codec->width; }
+   int getHeight() { return codec->height; }
+   PixelFormat getPixelFormat() { return codec->pix_fmt; }
 public slots:
-   void onFrameArrived(AVFrame* frame);
+   void onFrame(AVFrame* frame);
 private:
-   ServerParams params;
-   AVFormatContext* outputFormat;
-   AVCodecContext* outputCodec;
+   AVCodecContext* codec;
+   AVFormatContext* format;
    AVStream* video_st;
-}
+   int bufsize;
+   AVPacket pkt;
+   //bool isBusy;
+   QMutex mutex;
+};
+
+class Client: public QObject {
+   Q_OBJECT
+public:
+   Client(QString name, QString fmt);
+   ~Client();
+   int getWidth() { initFuture.waitForFinished(); return codec->width; }
+   int getHeight() { initFuture.waitForFinished(); return codec->height; }
+   PixelFormat getPixelFormat() { initFuture.waitForFinished(); return codec->pix_fmt; }
+signals:
+   void newFrame(AVFrame* frame);
+private:
+   void init();
+   void worker();
+
+   QFutureWatcher<void> initFuture;
+   QFutureWatcher<void> workerFuture;
+   AVFormatContext* format;
+   AVCodecContext* codec;
+   bool isStopped;
+   int pts;
+};
 
 #endif // FFWEBCAM_H

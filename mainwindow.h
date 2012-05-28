@@ -11,21 +11,27 @@ namespace Ui {
 class MainWindow;
 }
 
-class MainWindow : public QMainWindow
-{
-    Q_OBJECT
-    
+class MainWindow: public QMainWindow {
+   Q_OBJECT
 public:
-    explicit MainWindow(QWidget *parent = 0);
-    ~MainWindow();   
-    
+   explicit MainWindow(QWidget *parent = 0);
+   ~MainWindow();   
+signals:
+   void newServerFrame(AVFrame* frame);
 private slots:
-    void on_spinBox_valueChanged(int arg1);
-    void updateFrame(QImage* frame);
+   void onCameraFrame(AVFrame* frame);
+   void onRemoteFrame(AVFrame* frame);
+   void on_pushButtonStartReceive_clicked();
+   void on_pushButtonStartSend_clicked();
 
 private:
-    Ui::MainWindow *ui;
-    Webcam* webcam;
+   Ui::MainWindow *ui;
+   Server* server;
+   Client* camera;
+   Client* remote;
+   SwsContext* cameraToServer;
+   SwsContext* cameraToLocal;
+   SwsContext* remoteToLocal;
 };
 
 #endif // MAINWINDOW_H

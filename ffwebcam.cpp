@@ -1,188 +1,133 @@
 #include "ffwebcam.h"
 
-const PixelFormat QT_PIX_FMT = PIX_FMT_RGB32;
-const PixelFormat STREAM_PIX_FMT = PIX_FMT_YUV420P;
-
-WebcamParams defaultParams() {
-    WebcamParams params;
-    params.video_size = "sd";
-    params.device_id = 0;
-    params.fps = 25;
-    return params;
-}
-
-Webcam::Webcam(WebcamParams params) {
-   this->params = params;
-   AVDictionary* options = 0;
-   av_dict_set(&options, "video_size", params.size, 0);
-   av_dict_set(&options, "framerate", params.fps, 0);
-   if(avformat_open_input(&formatContext,params.device_name,0,0) < 0)
-      throw "Can't open input";
-   av_dict_free(&options);
-   if(avformat_find_stream_info(formatContext,0) < 0) throw "Can't find stream info";
-   int streamID = av_find_best_stream(formatContext,AVMEDIA_TYPE_VIDEO,-1,-1,&decoder,0);
-   if(streamID < 0) throw "Can't find best stream";
-   codecContext = formatContext->streams[streamID]->codec;
-   if(avcodec_open2(codecContext,decoder,0) < 0) cout << "cant associate codec on input\n";
-   QtConcurrent::run(Webcam::mainLoop);
-}
-
-void Webcam::mainLoop() {
-   AVPacket pkt;
-   AVFrame* frame;
-   int frameFinished;
-   while(1) {
-      frame = avcodec_alloc_frame();
-      frameFinished = 0;
-      while(!frameFinished) {
-         if(av_read_frame(formatContext,&pkt) < 0) cout << "cant read frame\n";
-         if(avcodec_decode_video2(codecContext,frame,&frameFinished,&pkt) < 0)
-            cout << "cant decode pkt\n";
-      }
-      // TODO should copy instead
-      emit frameArrived(frame);
-   }
-   av_free_packet(&pkt);
-}
-
-Server::Server(ServerParams params) {
-   this->params = params;
-   const AVOption* opt = 0;
-
-   //Constructing output sink
-   char* filename = "udp://localhost:8080?ttl=10";
-   //char* filename = "/tmp/out.m4v";
-   avformat_alloc_output_context2(&outputFormat,0,"m4v",filename);
-   AVOutputFormat *fmt = outputFormat->oformat;
-   CodecID codec_id = CODEC_ID_H264;
-   //CodecID codec_id = fmt->video_codec;
-   AVCodec* encoder = avcodec_find_encoder(codec_id);
-   video_st = avformat_new_stream(outputFormat,encoder);
-   outputCodec = video_st->codec;
-   avcodec_get_context_defaults3(outputCodec,encoder);
-   outputCodec->codec_id = codec_id;
-   outputCodec->width = inputCodec->width;
-   outputCodec->height = inputCodec->height;
-   outputCodec->pix_fmt = STREAM_PIX_FMT;
-   outputCodec->bit_rate = 400000;
-   outputCodec->time_base.num = 1;
-   outputCodec->time_base.den = 25;
-   outputCodec->gop_size = 12;
-   if(fmt->flags & AVFMT_GLOBALHEADER) outputCodec->flags |= CODEC_FLAG_GLOBAL_HEADER;
-   //const AVOption* opt = av_opt_find(outputFormat,"ts",0,0,0);
-   //cout << opt->name << ": " << opt->help << endl;
-   /*
-   cout << "Format options:\n";
-   for(;;) {
-      opt = av_opt_next(outputFormat, opt);
-      if(!opt) break;
-      cout << opt->name;
-      if(opt->unit != 0) cout << "(" << opt->unit << ")";
-      if(opt->help != 0) cout << ": " << opt->help;
-      cout << endl;
-   }
-   cout << "Codec options:\n";
-   for(;;) {
-      opt = av_opt_next(outputCodec, opt);
-      if(!opt) break;
-      cout << opt->name;
-      if(opt->unit != 0) cout << "(" << opt->unit << ")";
-      if(opt->help != 0) cout << ": " << opt->help;
-      cout << endl;
-   }
-   */
-   if(avcodec_open2(outputCodec,encoder,0) < 0) 
+Server::Server(QString filename, QString formatname, CodecID codecID
+              ,int w, int h, int bitrate, int fps, int gop_size) {
+   QByteArray fnameArr = filename.toAscii();
+   char* fname = fnameArr.data();
+   QByteArray fmtnameArr = formatname.toAscii();
+   char* fmtname = fmtnameArr.data();
+   avformat_alloc_output_context2(&format,0,fmtname,fname);
+   AVOutputFormat *fmt = format->oformat;
+   AVCodec* encoder = avcodec_find_encoder(codecID);
+   video_st = avformat_new_stream(format,encoder);
+   codec = video_st->codec;
+   avcodec_get_context_defaults3(codec,encoder);
+   codec->codec_id = codecID;
+   codec->pix_fmt = encoder->pix_fmts[0];
+   codec->width = w;
+   codec->height = h;
+   codec->bit_rate = bitrate;
+   codec->time_base.num = 1;
+   codec->time_base.den = fps;
+   codec->gop_size = gop_size;
+   codec->flags2 |= CODEC_FLAG2_LOCAL_HEADER;
+   //if(fmt->flags & AVFMT_GLOBALHEADER) codec->flags |= CODEC_FLAG_GLOBAL_HEADER;
+   if(avcodec_open2(codec,encoder,0) < 0) 
       cout << "cant associate codec on output\n";
 
    if(!(fmt->flags & AVFMT_NOFILE)) {
-      cout << "We have a file over here\n";
-      if(avio_open(&outputFormat->pb, filename,AVIO_FLAG_WRITE) < 0) {
-         cout << "But I cant write into it\n";
+      if(avio_open(&format->pb, fname,AVIO_FLAG_WRITE) < 0) {
+         cout << "Can't open a file for writing\n";
       }
    }
-   avformat_write_header(outputFormat,0);
-
-   convertQt = sws_getContext(inputCodec->width,inputCodec->height,inputCodec->pix_fmt
-                             ,inputCodec->width,inputCodec->height,QT_PIX_FMT
-                             ,SWS_BICUBIC,0,0,0);
-   convertStream = sws_getContext(inputCodec->width,inputCodec->height,inputCodec->pix_fmt
-                                 ,inputCodec->width,inputCodec->height,STREAM_PIX_FMT
-                                 ,SWS_BICUBIC,0,0,0);
-
-   this->pts = 0;
+   avformat_write_header(format,0);
+   bufsize = 100000 + 12 * codec->width * codec->height;
+   pkt.data = new uint8_t[bufsize];
+   //isBusy = false;
 }
 
-Webcam::~Webcam() {
-   grabTimer->stop();
-   delete grabTimer;
-
-   av_free(convertQt);
-   av_free(convertStream);
-
-   avcodec_close(inputCodec);
-   av_free(inputCodec);
-   avformat_free_context(inputFormat);
+Server::~Server() {
+   delete[] pkt.data;
+   avcodec_close(codec);
+   avformat_free_context(format);
 }
 
-void Webcam::start() { grabTimer->start(1000/params.fps); }
-
-void Webcam::stop() { grabTimer->stop(); }
-
-void frameToOutput(AVFormatContext* fmt, AVCodecContext* codec, AVStream* st, AVFrame* frame) {
-   int bufsize = 100000 + 12 * codec->width * codec->height;
-   uint8_t* buffer = new uint8_t[bufsize];
-   int outsize = avcodec_encode_video(codec,buffer,bufsize,frame);
+void Server::onFrame(AVFrame* frame) {
+   //if(!mutex.tryLock()) return;
+   QMutexLocker locker(&mutex);
+   //if(isBusy) return;
+   //isBusy = true;
+   av_init_packet(&pkt);
+   int outsize = avcodec_encode_video(codec,pkt.data,bufsize,frame);
    if(outsize > 0) {
-      AVPacket pkt;
-      av_init_packet(&pkt);
       if(codec->coded_frame->pts != AV_NOPTS_VALUE)
-         pkt.pts = av_rescale_q(codec->coded_frame->pts,codec->time_base, st->time_base);
+         pkt.pts = av_rescale_q(codec->coded_frame->pts,codec->time_base
+                               ,video_st->time_base);
       if(codec->coded_frame->key_frame) pkt.flags|=AV_PKT_FLAG_KEY;
-      pkt.stream_index = st->index;
-      pkt.data = buffer;
+      pkt.stream_index = video_st->index;
       pkt.size = outsize;
-      av_interleaved_write_frame(fmt,&pkt);
+      av_interleaved_write_frame(format,&pkt);
    }
-   delete[] buffer;
+   //isBusy = false;
+   //mutex.unlock();
 }
 
-AVFrame* grabFrame(AVFormatContext* fmt, AVCodecContext* codec) {
-   AVPacket pkt;
-   AVFrame* frame = avcodec_alloc_frame();
-   int frameFinished = 0;
-   while(!frameFinished) {
-      if(av_read_frame(fmt,&pkt) < 0) cout << "cant read frame\n";
-      if(avcodec_decode_video2(codec,frame,&frameFinished,&pkt) < 0)
-         cout << "cant decode pkt\n";
+Client::Client(QString filename, QString formatname) {
+   QByteArray fnameArr = filename.toAscii();
+   char* fname = fnameArr.data();
+   QByteArray fmtnameArr = formatname.toAscii();
+   char* fmtname = formatname.isEmpty() ? 0 : fmtnameArr.data();
+   format = avformat_alloc_context();
+   if(avformat_open_input(&format,fname,av_find_input_format(fmtname),0) < 0)
+      cout << "Can't open input\n";
+   initFuture.setFuture(QtConcurrent::run(this, &Client::init));
+   workerFuture.setFuture(QtConcurrent::run(this, &Client::worker));
+}
+
+Client::~Client() {
+   isStopped = true;
+   workerFuture.waitForFinished();
+   avcodec_close(codec);
+   avformat_free_context(format);
+}
+
+void Client::init() {
+   cout << "Client inits\n";
+   if(avformat_find_stream_info(format,0) < 0) cout << "Cant find stream info\n";
+   codec = format->streams[0]->codec;
+   if(!codec) cout << "Cant get codec context\n";
+   AVCodec* decoder;
+   if(!codec->codec_id) {
+      cout << "Improper hi\n";
+      decoder = avcodec_find_decoder(CODEC_ID_JPEG2000);
+      avcodec_get_context_defaults3(codec,decoder);
+      codec->codec_id = CODEC_ID_JPEG2000;
+      codec->pix_fmt = decoder->pix_fmts[0];
+      codec->width = 640;
+      codec->height = 480;
+      codec->bit_rate = 400000;
+      codec->time_base.num = 1;
+      codec->time_base.den = 25;
+      codec->gop_size = 12;
+   } else {
+      cout << "Proper hi\n";
+      decoder = avcodec_find_decoder(codec->codec_id);
    }
-   av_free_packet(&pkt);
-   return frame;
+   if(!decoder) cout << "Can't find decoder\n";
+   cout << "Just before opening codec\n";
+   if(avcodec_open2(codec,decoder,0) < 0) cout << "cant associate codec on input\n";
+   cout << "Client inits properly\n";
 }
 
-AVFrame* convertFrame(SwsContext* convert, PixelFormat pix_fmt, AVFrame* frame) {
-   AVFrame* newframe = new AVFrame;
-   int bufsize = avpicture_get_size(pix_fmt,frame->width,frame->height);
-   uint8_t* buffer = (uint8_t*)av_malloc(bufsize*sizeof(uint8_t));
-   avpicture_fill((AVPicture*)newframe,buffer,pix_fmt,frame->width,frame->height);
-   sws_scale(convert,frame->data,frame->linesize,0,frame->height
-            ,newframe->data,newframe->linesize);
-   // TODO is there a way to copy all metas to new frame automagically?
-   newframe->width = frame->width;
-   newframe->height = frame->height;
-   newframe->pts = frame->pts;
-   return newframe;
+void Client::worker() {
+   initFuture.waitForFinished();
+   AVFrame* frame;
+   isStopped = false;
+   pts = 0;
+   while(!isStopped) {
+      AVPacket pkt;
+      //cout << "worker:3\n";
+      frame = avcodec_alloc_frame();
+      int frameFinished = 0;
+      while(!frameFinished) {
+         if(av_read_frame(format,&pkt) < 0) cout << "cant read frame\n";
+         //cout << "worker:3.5\n";
+         if(avcodec_decode_video2(codec,frame,&frameFinished,&pkt) < 0)
+            cout << "cant decode pkt\n";
+      }
+      frame->pts = this->pts++;
+      //cout << "worker:4\n";
+      emit newFrame(frame);
+      av_free_packet(&pkt);
+   }
 }
-
-void Webcam::grabTimerTimeout() {
-   AVFrame* frame = grabFrame(this->inputFormat,this->inputCodec);
-   frame->pts = this->pts++;
-   AVFrame* qtframe = convertFrame(convertQt,QT_PIX_FMT,frame);
-   AVFrame* sframe = convertFrame(convertStream,STREAM_PIX_FMT,frame);
-   emit frameArrived(new QImage(qtframe->data[0],qtframe->width
-                    ,qtframe->height,QImage::Format_RGB32));
-   frameToOutput(this->outputFormat,this->outputCodec,this->video_st,sframe);
-   av_free(frame);
-   av_free(qtframe);
-   av_free(sframe);
-}
-
