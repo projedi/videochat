@@ -2,5 +2,5 @@
 *.o
 videochat-oldapi
 ui_mainwindow.h
-moc_mainwindow.cpp
+moc_*.cpp
 Makefile
