@@ -84,6 +84,7 @@ Client::~Client() {
 void Client::init() {
    cout << "Client inits\n";
    if(avformat_find_stream_info(format,0) < 0) cout << "Cant find stream info\n";
+   cout << "Client finds stream info\n";
    codec = format->streams[0]->codec;
    if(!codec) cout << "Cant get codec context\n";
    AVCodec* decoder;

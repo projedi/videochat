@@ -9,11 +9,12 @@ QT       += core gui
 unix {
    CONFIG += link_pkgconfig
    PKGCONFIG += libavcodec libavformat libavdevice libswscale libavutil
-} win32 {
-   QMAKE_CXX = i686-w64-mingw32-g++
-   QMAKE_INCDIR = /usr/i686-w64-mingw32/include
-   QMAKE_LIBDIR = /usr/i686-w64-mingw32/lib
 }
+#win32 {
+#   QMAKE_CXX = i686-w64-mingw32-g++
+#   QMAKE_INCDIR = /usr/i686-w64-mingw32/include
+#   QMAKE_LIBDIR = /usr/i686-w64-mingw32/lib
+#}
 #LIBS += -lavcodec -lavformat -lavdevice
 #INCLUDEPATH += /usr/include/c++/4.7.0/
 QMAKE_CXXFLAGS = -D__STDC_CONSTANT_MACROS
