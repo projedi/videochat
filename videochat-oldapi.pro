@@ -7,8 +7,12 @@
 QT       += core gui
 
 unix {
-CONFIG += link_pkgconfig
-PKGCONFIG += libavcodec libavformat libavdevice libswscale libavutil
+   CONFIG += link_pkgconfig
+   PKGCONFIG += libavcodec libavformat libavdevice libswscale libavutil
+} win32 {
+   QMAKE_CXX = i686-w64-mingw32-g++
+   QMAKE_INCDIR = /usr/i686-w64-mingw32/include
+   QMAKE_LIBDIR = /usr/i686-w64-mingw32/lib
 }
 #LIBS += -lavcodec -lavformat -lavdevice
 #INCLUDEPATH += /usr/include/c++/4.7.0/
@@ -26,13 +30,13 @@ HEADERS  += mainwindow.h \
 
 FORMS    += mainwindow.ui
 
-win32: LIBS += -L$$PWD/external/ffmpeg/lib/ -lavcodec -lavformat -lavdevice -lswscale -lavutil
+#win32: LIBS += -L$$PWD/external/ffmpeg/lib/ -lavcodec -lavformat -lavdevice -lswscale -lavutil
 
-INCLUDEPATH += $$PWD/external/ffmpeg/include
-DEPENDPATH += $$PWD/external/ffmpeg/include
+#win32: INCLUDEPATH += $$PWD/external/ffmpeg/include
+#win32: DEPENDPATH += $$PWD/external/ffmpeg/include
 
-win32: PRE_TARGETDEPS += $$PWD/external/ffmpeg/lib/avcodec.lib
-win32: PRE_TARGETDEPS += $$PWD/external/ffmpeg/lib/avformat.lib
-win32: PRE_TARGETDEPS += $$PWD/external/ffmpeg/lib/avdevice.lib
-win32: PRE_TARGETDEPS += $$PWD/external/ffmpeg/lib/swscale.lib
-win32: PRE_TARGETDEPS += $$PWD/external/ffmpeg/lib/avutil.lib
+#win32: PRE_TARGETDEPS += $$PWD/external/ffmpeg/lib/avcodec.lib
+#win32: PRE_TARGETDEPS += $$PWD/external/ffmpeg/lib/avformat.lib
+#win32: PRE_TARGETDEPS += $$PWD/external/ffmpeg/lib/avdevice.lib
+#win32: PRE_TARGETDEPS += $$PWD/external/ffmpeg/lib/swscale.lib
+#win32: PRE_TARGETDEPS += $$PWD/external/ffmpeg/lib/avutil.lib
