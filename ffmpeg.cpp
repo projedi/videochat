@@ -25,7 +25,7 @@ FFConnector::~FFConnector() {
 }
 
 void FFConnector::newVideoFrame(AVFrame* frame) {
-   AVFrame* newFrame = new AVFrame;
+   AVFrame* newFrame = avcodec_alloc_frame();
    avpicture_alloc((AVPicture*)newFrame,pf,w,h)
    sws_scale(scaler,frame->data,frame->linesize,0,frame->height
             ,newFrame->data,newFrame->linesize);
