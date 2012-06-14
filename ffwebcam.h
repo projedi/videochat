@@ -9,56 +9,126 @@ extern "C" {
    #include <libavutil/opt.h>
 }
 
-#include <QImage>
+//#include <QImage>
 #include <QObject>
+#include <QString>
 #include <QtConcurrentRun>
-#include <QFutureWatcher>
+//#include <QFutureWatcher>
+#include <QMutex>
 #include <QMutexLocker>
 
 #include <iostream>
 using namespace std;
 
-class Server: public QObject {
+class FFVideoDevice: public QObject {
    Q_OBJECT
 public:
-   Server(QString name, QString fmt, CodecID codecID, int w, int h, int bitrate, int fps
-         ,int gop_size);
-   ~Server();
-   int getWidth() { return codec->width; }
-   int getHeight() { return codec->height; }
-   PixelFormat getPixelFormat() { return codec->pix_fmt; }
-public slots:
-   void onFrame(AVFrame* frame);
-private:
-   AVCodecContext* codec;
-   AVFormatContext* format;
-   AVStream* video_st;
-   int bufsize;
-   AVPacket pkt;
-   //bool isBusy;
-   QMutex mutex;
+   virtual int getWidth() = 0; 
+   virtual int getHeight() = 0; 
+   virtual PixelFormat getPixelFormat() = 0; 
 };
 
-class Client: public QObject {
+class FFSource: public FFVideoDevice {
    Q_OBJECT
-public:
-   Client(QString name, QString fmt);
-   ~Client();
-   int getWidth() { initFuture.waitForFinished(); return codec->width; }
-   int getHeight() { initFuture.waitForFinished(); return codec->height; }
-   PixelFormat getPixelFormat() { initFuture.waitForFinished(); return codec->pix_fmt; }
 signals:
-   void newFrame(AVFrame* frame);
-private:
-   void init();
-   void worker();
-
-   QFutureWatcher<void> initFuture;
-   QFutureWatcher<void> workerFuture;
-   AVFormatContext* format;
-   AVCodecContext* codec;
-   bool isStopped;
-   int pts;
+   void onNewVideoFrame(AVFrame* frame);
+   void onNewAudioFrame(AVFrame* frame);
 };
+
+class FFSink: public FFVideoDevice {
+   Q_OBJECT
+public slots:
+   virtual void newVideoFrame(AVFrame* frame) = 0;
+   virtual void newAudioFrame(AVFrame* frame) = 0;
+};
+
+struct Device {
+   QString name;
+   QString ffmpegName;
+   //QString ffmpegFormat;
+};
+
+// ALSA + Video4Linux2 as one input device
+class ALSAV4L2: public FFSource {
+   Q_OBJECT
+public:
+   ALSAV4L2(QString cameraName, QString microphoneName);
+   ALSAV4L2(Device camera, Device microphone): this(camera.ffmpegName
+                                                   ,microphone.ffmpegName);
+   ~ALSAV4L2();
+   //TODO: I want these to be inheritable
+   static QList<Device> getCameraDevices();
+   static QList<Device> getMicrophoneDevices();
+   int getWidth() { QMutexLocker(&initLocker); return videoCodec->width; }
+   int getHeight() { QMutexLocker(&initLocker); return videoCodec->height; }
+   PixelFormat getPixelFormat() { QMutexLocker(&initLocker); return videoCodec->pix_fmt; }
+private:
+   AVFormatContext* videoFormat;
+   AVFormatContext* audioFormat;
+   AVCodecContext* videoCodec;
+   AVCodecContext* audioCodec;
+   QMutex initLocker;
+   void init(QString cameraName, QString microphoneName);
+   void videoWorker();
+   void audioWorker();
+}
+
+//TODO: It can't dynamically resized. Bad.
+//TODO: What if I want different audio renderings on different platforms? For some reason.
+class Player: public FFSink {
+   Q_OBJECT
+public:
+   Player(int width, int height, QString audioOutput);
+   ~Player();
+   void newVideoFrame(AVFrame* frame);
+   void newAudioFrame(AVFrame* frame);
+   int getWidth() { QMutexLocker(&initLocker); return codec->width; }
+   int getHeight() { QMutexLocker(&initLocker); return codec->height; }
+   PixelFormat getPixelFormat() { QMutexLocker(&initLocker); return codec->pix_fmt; }
+signals:
+   void onNewFrame(QPixmap frame);
+private:
+   AVFormatContext* audioFormat;
+   AVCodecContext* videoCodec;
+   AVCodecContext* audioCodec;
+   QMutex initLocker;
+};
+
+//TODO: Client & Server? Seriously? WHY U NO USE PROPER NAMING?
+class Client: public FFSource {
+   Q_OBJECT
+public:
+   Client(QString port);
+   ~Client();
+   int getWidth() { QMutexLocker(&initLocker); return videoCodec->width; }
+   int getHeight() { QMutexLocker(&initLocker); return videoCodec->height; }
+   PixelFormat getPixelFormat() { QMutexLocker(&initLocker); return videoCodec->pix_fmt; }
+private:
+   AVFormatContext* videoFormat;
+   AVFormatContext* audioFormat;
+   AVCodecContext* videoCodec;
+   AVCodecContext* audioCodec;
+   QMutex initLocker;
+   void init(QString cameraName, QString microphoneName);
+   void videoWorker();
+   void audioWorker();
+};
+
+class Server: public FFSink {
+   Q_OBJECT 
+public:
+   Server(QString port);
+   ~Server();
+   void newVideoFrame(AVFrame* frame);
+   void newAudioFrame(AVFrame* frame);
+   int getWidth() { QMutexLocker(&initLocker); return codec->width; }
+   int getHeight() { QMutexLocker(&initLocker); return codec->height; }
+   PixelFormat getPixelFormat() { QMutexLocker(&initLocker); return codec->pix_fmt; }
+private:
+   AVFormatContext* format;
+   AVCodecContext* videoCodec;
+   AVCodecContext* audioCodec;
+   QMutex initLocker;
+}
 
 #endif // FFWEBCAM_H

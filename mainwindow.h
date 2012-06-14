@@ -24,6 +24,10 @@ private slots:
    void on_pushButtonStartReceive_clicked();
    void on_pushButtonStartSend_clicked();
 
+   void on_buttonCall_clicked();
+
+   void on_buttonSendFile_clicked();
+
 private:
    Ui::MainWindow *ui;
    Server* server;

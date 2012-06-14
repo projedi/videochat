@@ -1,11 +1,9 @@
 #include <QtGui/QApplication>
 #include "mainwindow.h"
-//#include "ffwebcam.h"
 
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
-    cout << "Before ffmpeg\n";
     avcodec_register_all();
     avdevice_register_all();
     av_register_all();

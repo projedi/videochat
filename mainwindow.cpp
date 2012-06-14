@@ -67,6 +67,7 @@ void MainWindow::on_pushButtonStartSend_clicked() {
    QString name = ui->lineEditLocalPath->text();
 
    camera = new Client(name,dri);
+   /*
    QString uri = "udp://localhost:";
    QString port = ui->lineEditLocalPort->text();
    uri.append(port);
@@ -103,6 +104,17 @@ void MainWindow::on_pushButtonStartSend_clicked() {
                                         ,sw,sh,spf,SWS_BICUBIC,0,0,0);
    connect(this,SIGNAL(newServerFrame(AVFrame*)),server,SLOT(onFrame(AVFrame*))
           ,Qt::QueuedConnection);
+          */
    cout << "At the end actually\n";
+
+}
+
+void MainWindow::on_buttonCall_clicked()
+{
+
+}
+
+void MainWindow::on_buttonSendFile_clicked()
+{
 
 }
