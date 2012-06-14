@@ -46,6 +46,7 @@ void ALSAV4L2::init(QString cameraName, QString microphoneName) {
    if(!audioDecoder) cout << "Can't find decoder for ALSA" << endl;
    if(avcodec_open2(audioCodec,audioDecoder,0) < 0)
       cout << "Can't associate codec on input for ALSA" << endl;
+
    QtConcurrent::run(this, &ALSAV4L2::videoWorker);
    QtConcurrent::run(this, &ALSAV4L2::audioWorker);
 }
@@ -54,25 +55,44 @@ void ALSAV4L2::init(QString cameraName, QString microphoneName) {
 void ALSAV4L2::videoWorker() {
    AVFrame* frame;
    int pts = 0;
+   int frameFinished;
    while(true) {
       AVPacket pkt;
       frame = avcodec_alloc_frame();
-      int frameFinished = 0;
-      while(!frameFinished) {
-         if(av_read_frame(format,&pkt) < 0) cout << "cant read frame\n";
-         if(avcodec_decode_video2(codec,frame,&frameFinished,&pkt) < 0)
-            cout << "cant decode pkt\n";
-      }
-      av_free_packet(&pkt);
-      //TODO proper pts handling
+      //TODO: technically I should check that frame is finished
+      if(av_read_frame(videoFormat,&pkt) < 0) cout << "Can't read frame" << endl;
+      if(avcodec_decode_video2(videoCodec,frame,&frameFinished,&pkt) < 0)
+         cout << "Can't decode pkt" << endl;
+      //TODO: proper pts handling
       frame->pts = pts++;
-      emit newFrame(frame);
+      emit onNewVideoFrame(frame);
+      //TODO: Do I need to do that?
+      av_free_packet(&pkt);
    }
 }
 
-//TODO: Implement for a change
 void ALSAV4L2::audioWorker() {
-
+   AVFrame* frame;
+   int pts = 0;
+   int got_frame;
+   while(true) {
+      AVPacket pkt;
+      if(av_read_frame(audioFrame,&pkt) < 0) cout << "Can't read frame" << endl;
+      while(pkt.size > 0) {
+         frame = avcodec_alloc_frame();
+         int len = avcodec_decode_audio4(audioCodec,frame,&got_frame,&pkt);
+         //TODO: Check if this is a correct behaviour.
+         if(!got_frame) continue;
+         if(len < 0) cout << "Can't decode pkt" << endl;
+         pkt.data += len;
+         pkt.size -= len;
+         //TODO: proper pts handling
+         frame->pts = pts++;
+         emit onNewAudioFrame(frame);
+      }
+      //TODO: Do I need to do that?
+      av_free_packet(&pkt);
+   }
 }
 
 ALSAV4L2::~ALSAV4L2() {
