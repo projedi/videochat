@@ -51,14 +51,18 @@ public slots:
 class FFConnector: public QObject {
    Q_OBJECT
 public:
-   VideoFrameScaler(FFSource source, FFSink sink);
-   ~VideoFrameScaler();
+   FFConnector(FFSource* source, FFSink* sink);
+   ~FFConnector();
 private slots:
    void newVideoFrame(AVFrame* frame);
    void newAudioFrame(AVFrame* frame);
 private:
    SwsContext* scaler;
    SwrContext* resampler;
+   //TODO: they shoudln't be here. Find nice copying of AVFrame/AVPicture.
+   int w;
+   int h;
+   PixelFormat pf;
 }
 
 //TODO: Seems redundant. Doesn't it?
