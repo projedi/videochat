@@ -1,7 +1,7 @@
 #include "client.h"
 
 Client::Client(QString file) {
-   QtConcurrent::run(this, &ALSAV4L2::init, file);
+   QtConcurrent::run(this, &Client::init, file);
 }
 
 Client::~Client() {
