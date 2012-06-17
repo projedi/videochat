@@ -1,35 +1,29 @@
 #include "ffmpeg.h"
 
 // ALSA + Video4Linux2 as one input device
-class ALSAV4L2: public FFSource {
+class ALSAV4L2: public FFSource, public FFHardware {
    Q_OBJECT
 public:
-   ALSAV4L2(QString cameraName, QString microphoneName);
-   ALSAV4L2(Device camera, Device microphone): this(camera.ffmpegName
-                                                   ,microphone.ffmpegName);
+   ALSAV4L2(QString camera, QString microphone);
    ~ALSAV4L2();
-   //TODO: I want these to be inheritable
-   static QList<Device> getCameraDevices();
-   static QList<Device> getMicrophoneDevices();
 
-   int getWidth() { QMutexLocker(&initLocker); return videoCodec->width; }
-   int getHeight() { QMutexLocker(&initLocker); return videoCodec->height; }
-   PixelFormat getPixelFormat() { QMutexLocker(&initLocker); return videoCodec->pix_fmt; }
-   int64_t getChannelLayout() { QMutexLocker(&initLocker);
-                                return audioCodec->channel_layout;
-                              }
-   AVSampleFormat getSampleFormat() { QMutexLocker(&initLocker);
-                                      return audioCodec->sample_fmt;
-                                    }
-   int getSampleRate() { QMutexLocker(&initLocker); return audioCodec->sample_rate; }
+   QList<QPair<QString,QString>> cameras();
+   QList<QPair<QString,QString>> microphones();
+
+   int width() { QMutexLocker(&initLocker); return vCodec->width; }
+   int height() { QMutexLocker(&initLocker); return vCodec->height; }
+   PixelFormat pixelFormat() { QMutexLocker(&initLocker); return vCodec->pix_fmt; }
+   int64_t channelLayout() { QMutexLocker(&initLocker); return aCodec->channel_layout; }
+   AVSampleFormat sampleFormat() { QMutexLocker(&initLocker); return aCodec->sample_fmt; }
+   int sampleRate() { QMutexLocker(&initLocker); return aCodec->sample_rate; }
 private:
-   AVFormatContext* videoFormat;
-   AVFormatContext* audioFormat;
-   AVCodecContext* videoCodec;
-   AVCodecContext* audioCodec;
+   AVFormatContext* vFormat;
+   AVFormatContext* aFormat;
+   AVCodecContext* vCodec;
+   AVCodecContext* aCodec;
 
    QMutex initLocker;
-   void init(QString cameraName, QString microphoneName);
+   void init(QString camera, QString microphone);
    void videoWorker();
    void audioWorker();
 };
