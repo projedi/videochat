@@ -12,6 +12,7 @@ extern "C" {
 #include <QObject>
 #include <QString>
 #include <QtConcurrentRun>
+#include <QSharedData>
 //#include <QFutureWatcher>
 #include <QMutex>
 #include <QMutexLocker>
@@ -20,44 +21,47 @@ extern "C" {
 using namespace std;
 
 //TODO: Have a philosophical talk with yourself on whether you
-//TODO: can allow inheriting fields, not just methods.
+//TODO: can allow abstract classes - not just interfaces
+
+class AVFrameData: public QSharedData {
+public:
+   AVFrameData() { }
+   AVFrameData(const AVFrameData &other): QSharedData(other), data(other.data) { }
+   ~AVFrameData() { }
+private:
+   AVFrame* data;
+};
 
 //Simple reference counting for AVFrame
-//TODO: If SEGFAULT comes, add debug output.
 class QAVFrame {
 public:
-   //TODO: Do I really need that shortcut?
-   QAVFrame(): QAVFrame(avcodec_alloc_frame()) { }
-   QAVFrame(AVFrame* frame) { data = frame; refcount = new int(1); }
-   QAVFrame(const QAVFrame& other) { QMutexLocker(&mutex); (*count)++; data=other.data; }
-   ~QAVFrame() { QMutexLocker(&mutex); (*count)--; if(*count <= 0) av_free(data); }
-   AVFrame* getData() { QMutexLocker(&mutex); return data; }
+   QAVFrame() { d = new AVFrameData(); }
+   QAVFrame(AVFrame* frame){ d = new AVFrameData(); setData(frame); }
+   AVFrame* data() const { return d->data; }
+   void setData(AVFrame* frame) { d->data = frame; }
 private:
-   int* count;
-   AVFrame* data;
-   QMutex mutex;
+   QSharedDataPointer<AVFrameData> d;
 }
 
 //TODO: It doesn't really require a "Device". Use more generic term.
-class FFDevice: public QObject {
-   Q_OBJECT
+class FFDevice {
 public:
-   virtual int getWidth() = 0; 
-   virtual int getHeight() = 0; 
-   virtual PixelFormat getPixelFormat() = 0; 
-   virtual int64_t getChannelLayout() = 0;
-   virtual AVSampleFormat getSampleFormat() = 0;
-   virtual int getSampleRate() = 0;
+   virtual int width() const = 0; 
+   virtual int height() const = 0; 
+   virtual PixelFormat pixelFormat() const = 0; 
+   virtual int64_t channelLayout() const = 0;
+   virtual AVSampleFormat sampleFormat() const = 0;
+   virtual int sampleRate() const = 0;
 };
 
-class FFSource: public FFDevice {
+class FFSource: public QObject, public FFDevice {
    Q_OBJECT
 signals:
    void onNewVideoFrame(QAVFrame frame);
    void onNewAudioFrame(QAVFrame frame);
 };
 
-class FFSink: public FFDevice {
+class FFSink: public QObject, public FFDevice {
    Q_OBJECT
 public slots:
    virtual void newVideoFrame(QAVFrame frame) = 0;
@@ -67,8 +71,10 @@ public slots:
 class FFConnector: public QObject {
    Q_OBJECT
 public:
-   FFConnector(FFSource* source, FFSink* sink);
-   ~FFConnector();
+   explicit FFConnector(QObject* parent = 0): QObject(parent) { }
+   ~FFConnector() { ffDisconnect(); }
+   void ffConnect(FFSource* source, FFSink* sink);
+   void ffDisconnect();
 private slots:
    void newVideoFrame(QAVFrame frame);
    void newAudioFrame(QAVFrame frame);
@@ -81,10 +87,9 @@ private:
    PixelFormat pf;
 }
 
-//TODO: Seems redundant. Doesn't it?
-struct Device {
-   QString name;
-   QString ffmpegName;
+class FFHardware {
+   virtual QList<QPair<QString,QString>> cameras() const = 0;
+   virtual QList<QPair<QString,QString>> microphones() const = 0;
 };
 
 // Not to clutter includes for users
