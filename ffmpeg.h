@@ -20,7 +20,23 @@ extern "C" {
 using namespace std;
 
 //TODO: Have a philosophical talk with yourself on whether you
-//TODO: can allow inheriting fields and not just methods.
+//TODO: can allow inheriting fields, not just methods.
+
+//Simple reference counting for AVFrame
+//TODO: If SEGFAULT comes, add debug output.
+class QAVFrame {
+public:
+   //TODO: Do I really need that shortcut?
+   QAVFrame(): QAVFrame(avcodec_alloc_frame()) { }
+   QAVFrame(AVFrame* frame) { data = frame; refcount = new int(1); }
+   QAVFrame(const QAVFrame& other) { QMutexLocker(&mutex); (*count)++; data=other.data; }
+   ~QAVFrame() { QMutexLocker(&mutex); (*count)--; if(*count <= 0) av_free(data); }
+   AVFrame* getData() { QMutexLocker(&mutex); return data; }
+private:
+   int* count;
+   AVFrame* data;
+   QMutex mutex;
+}
 
 //TODO: It doesn't really require a "Device". Use more generic term.
 class FFDevice: public QObject {
@@ -37,15 +53,15 @@ public:
 class FFSource: public FFDevice {
    Q_OBJECT
 signals:
-   void onNewVideoFrame(AVFrame* frame);
-   void onNewAudioFrame(AVFrame* frame);
+   void onNewVideoFrame(QAVFrame frame);
+   void onNewAudioFrame(QAVFrame frame);
 };
 
 class FFSink: public FFDevice {
    Q_OBJECT
 public slots:
-   virtual void newVideoFrame(AVFrame* frame) = 0;
-   virtual void newAudioFrame(AVFrame* frame) = 0;
+   virtual void newVideoFrame(QAVFrame frame) = 0;
+   virtual void newAudioFrame(QAVFrame frame) = 0;
 };
 
 class FFConnector: public QObject {
@@ -54,8 +70,8 @@ public:
    FFConnector(FFSource* source, FFSink* sink);
    ~FFConnector();
 private slots:
-   void newVideoFrame(AVFrame* frame);
-   void newAudioFrame(AVFrame* frame);
+   void newVideoFrame(QAVFrame frame);
+   void newAudioFrame(QAVFrame frame);
 private:
    SwsContext* scaler;
    SwrContext* resampler;

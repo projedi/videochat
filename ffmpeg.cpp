@@ -10,8 +10,8 @@ FFConnector::FFConnector(FFSource* source, FFSink* sink) {
                                  , source->getSampleFormat(), source->getSampleRate()
                                  ,0,0);
    //TODO: Should I add Qt::QueuedConnection? ANALYZE!
-   connect(source, SIGNAL(onNewVideoFrame(AVFrame*)), SLOT(newVideoFrame(AVFrame*)));
-   connect(source, SIGNAL(onNewAudioFrame(AVFrame*)), SLOT(newAudioFrame(AVFrame*)));
+   connect(source, SIGNAL(onNewVideoFrame(QAVFrame)), SLOT(newVideoFrame(QAVFrame)));
+   connect(source, SIGNAL(onNewAudioFrame(QAVFrame)), SLOT(newAudioFrame(QAVFrame)));
    w = sink->getWidth();
    h = sink->getHeight();
    pf = sink->getPixelFormat();
@@ -24,22 +24,21 @@ FFConnector::~FFConnector() {
    sws_freeContext(scaler); scaler = 0;
 }
 
-void FFConnector::newVideoFrame(AVFrame* frame) {
-   AVFrame* newFrame = avcodec_alloc_frame();
-   avpicture_alloc((AVPicture*)newFrame,pf,w,h)
-   sws_scale(scaler,frame->data,frame->linesize,0,frame->height
-            ,newFrame->data,newFrame->linesize);
+void FFConnector::newVideoFrame(QAVFrame frame) {
+   QAVFrame newFrame();
+   avpicture_alloc((AVPicture*)newFrame.data,pf,w,h)
+   sws_scale(scaler,frame.data->data,frame.data->linesize,0,frame.data->height
+            ,newFrame.data->data,newFrame.data->linesize);
    //TODO: Is there a way to copy all metas to new frame automagically?
-   newFrame->width = w;
-   newFrame->height = h;
+   newFrame.data->width = w;
+   newFrame.data->height = h;
    //TODO: better time scaling
-   newFrame->pts = frame->pts;
+   newFrame.data->pts = frame.data->pts;
    sink->newVideoFrame(newFrame);
-   //TODO: When to dispose the old frame?
 }
 
-void FFConnector::newAudioFrame(AVFrame* frame) {
+void FFConnector::newAudioFrame(QAVFrame frame) {
    //TODO: Check if I really need a resampler
    sink->newAudioFrame(frame);
-   //TODO: Wait a second, champ. What if frame is disposed?
+   //TODO: Wait a second, champ. What if a frame is disposed?
 }
