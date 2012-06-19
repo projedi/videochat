@@ -5,7 +5,7 @@
 #-------------------------------------------------
 
 QT       += core gui
-LIBS += -lavcodec -lavformat -lavdevice -lswcale -lavutil
+LIBS += -lavcodec -lavformat -lavdevice -lswscale -lavutil -lswresample
 QMAKE_CXXFLAGS = -D__STDC_CONSTANT_MACROS
 
 #unix {
@@ -22,12 +22,16 @@ QMAKE_CXXFLAGS = -D__STDC_CONSTANT_MACROS
 TARGET = videochat-oldapi
 TEMPLATE = app
 
-SOURCES += main.cpp\
-        mainwindow.cpp \
-    ffwebcam.cpp
+SOURCES += main.cpp \
+           mainwindow.cpp \
+           ffmpeg.cpp \
+           ffmpeg/alsav4l2.cpp \
+           ffmpeg/player.cpp
 
 HEADERS  += mainwindow.h \
-    ffwebcam.h
+            ffmpeg.h \
+            ffmpeg/alsav4l2.h \
+            ffmpeg/player.h
 
 FORMS    += mainwindow.ui
 

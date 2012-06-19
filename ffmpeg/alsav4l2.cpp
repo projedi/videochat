@@ -1,16 +1,16 @@
 #include "alsav4l2.h"
 
 //TODO: PROPERLY
-QList<QPair<QString,QString>> ALSAV4L2::cameras() {
-   QList<QPair<QString,QString>> list;
-   list.append(qMakePair("WebCam SCB-1900N","/dev/video0"));
+QList<QPair<QString,QString> > ALSAV4L2::cameras() {
+   QList<QPair<QString,QString> > list;
+   list.append(QPair<QString,QString>("WebCam SCB-1900N","/dev/video0"));
    return list;
 }
 
 //TODO: PROPERLY
-QList<QPair<QString,QString>> ALSAV4L2::microphones() {
-   QList<QPair<QString,QString>> list;
-   list.append(qMakePair("ALC269 Analog","hw:0"));
+QList<QPair<QString,QString> > ALSAV4L2::microphones() {
+   QList<QPair<QString,QString> > list;
+   list.append(QPair<QString,QString>("ALC269 Analog","hw:0"));
    return list;
 }
 
@@ -26,7 +26,7 @@ ALSAV4L2::~ALSAV4L2() {
 }
 
 void ALSAV4L2::init(QString camera, QString microphone) {
-   QMutexLocker(&initLocker);
+   QMutexLocker l(&initLocker);
    QByteArray camName = camera.toAscii();
    QByteArray micName = microphone.toAscii();
 
@@ -35,7 +35,7 @@ void ALSAV4L2::init(QString camera, QString microphone) {
       cout << "Can't open v4l2 input" << endl;
    if(avformat_find_stream_info(vFormat,0) < 0)
       cout << "Can't find stream info for v4l2" << endl;
-   AVCodec* vCodec = vFormat->streams[0]->codec;
+   vCodec = vFormat->streams[0]->codec;
    if(!vCodec) cout << "Can't get codec context for v4l2" << endl;
    AVCodec* vDecoder = avcodec_find_decoder(vCodec->codec_id);
    if(!vDecoder) cout << "Can't find decoder for v4l2" << endl;
@@ -49,7 +49,7 @@ void ALSAV4L2::init(QString camera, QString microphone) {
       cout << "Can't find stream info for ALSA" << endl;
    aCodec = aFormat->streams[0]->codec;
    if(!aCodec) cout << "Cant get codec context for ALSA" << endl;
-   aDecoder = avcodec_find_decoder(aCodec->codec_id);
+   AVCodec* aDecoder = avcodec_find_decoder(aCodec->codec_id);
    if(!aDecoder) cout << "Can't find decoder for ALSA" << endl;
    if(avcodec_open2(aCodec,aDecoder,0) < 0)
       cout << "Can't associate codec on input for ALSA" << endl;
@@ -76,6 +76,7 @@ void ALSAV4L2::videoWorker() {
 }
 
 void ALSAV4L2::audioWorker() {
+   /*
    int pts = 0;
    int got_frame;
    while(true) {
@@ -95,4 +96,5 @@ void ALSAV4L2::audioWorker() {
       }
       av_free_packet(&pkt);
    }
+   */
 }

@@ -5,6 +5,7 @@ extern "C" {
    #include <libavformat/avformat.h>
    #include <libavdevice/avdevice.h>
    #include <libswscale/swscale.h>
+   #include <libswresample/swresample.h>
    #include <libavutil/opt.h>
 }
 
@@ -28,7 +29,6 @@ public:
    AVFrameData() { }
    AVFrameData(const AVFrameData &other): QSharedData(other), data(other.data) { }
    ~AVFrameData() { }
-private:
    AVFrame* data;
 };
 
@@ -41,17 +41,17 @@ public:
    void setData(AVFrame* frame) { d->data = frame; }
 private:
    QSharedDataPointer<AVFrameData> d;
-}
+};
 
 //TODO: It doesn't really require a "Device". Use more generic term.
 class FFDevice {
 public:
-   virtual int width() const = 0; 
-   virtual int height() const = 0; 
-   virtual PixelFormat pixelFormat() const = 0; 
-   virtual int64_t channelLayout() const = 0;
-   virtual AVSampleFormat sampleFormat() const = 0;
-   virtual int sampleRate() const = 0;
+   virtual int width() = 0; 
+   virtual int height() = 0; 
+   virtual PixelFormat pixelFormat() = 0; 
+   virtual int64_t channelLayout() = 0;
+   virtual AVSampleFormat sampleFormat() = 0;
+   virtual int sampleRate() = 0;
 };
 
 class FFSource: public QObject, public FFDevice {
@@ -81,19 +81,21 @@ private slots:
 private:
    SwsContext* scaler;
    SwrContext* resampler;
+   FFSource* source;
+   FFSink* sink;
    //TODO: they shoudln't be here. Find nice copying of AVFrame/AVPicture.
    int w;
    int h;
    PixelFormat pf;
-}
+};
 
 class FFHardware {
-   virtual QList<QPair<QString,QString>> cameras() const = 0;
-   virtual QList<QPair<QString,QString>> microphones() const = 0;
+   virtual QList<QPair<QString,QString> > cameras() = 0;
+   virtual QList<QPair<QString,QString> > microphones() = 0;
 };
 
 // Not to clutter includes for users
 #include "ffmpeg/alsav4l2.h"
-#include "ffmpeg/client.h"
+//#include "ffmpeg/client.h"
 #include "ffmpeg/player.h"
-#include "ffmpeg/server.h"
+//#include "ffmpeg/server.h"

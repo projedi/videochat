@@ -1,27 +1,33 @@
+#pragma once
+
 #include "ffmpeg.h"
+#include <QImage>
+#include <QPixmap>
 
 //TODO: It can't dynamically resized. Bad.
-//TODO: What if I want different audio renderings on different platforms? For some reason.
-//TODO: There's no native ffmpeg method to output audio on windows. Therefore,
-//TODO: this solution is just to display local video
-//TODO: All that in mind, this class is probably useless
 class Player: public FFSink {
    Q_OBJECT
 public:
-   Player(int width, int height, QString audioOutput);
+   Player(int width, int height);
    ~Player();
-   void newVideoFrame(AVFrame* frame);
-   void newAudioFrame(AVFrame* frame);
-   int getWidth() { QMutexLocker(&initLocker); return width; }
-   int getHeight() { QMutexLocker(&initLocker); return height; }
-   PixelFormat getPixelFormat() { QMutexLocker(&initLocker); return PIX_FMT_RGB32; }
+
+   void newVideoFrame(QAVFrame frame);
+   void newAudioFrame(QAVFrame frame);
+
+   int width() { initFuture.waitForFinished(); return w; }
+   int height() { initFuture.waitForFinished(); return h; }
+   PixelFormat pixelFormat() { initFuture.waitForFinished(); return PIX_FMT_RGB32; }
+   int64_t channelLayout() { initFuture.waitForFinished(); return av_get_default_channel_layout(2); }//h(spec.channels); }
+   AVSampleFormat sampleFormat() { initFuture.waitForFinished(); return AV_SAMPLE_FMT_S16; }
+   int sampleRate() { initFuture.waitForFinished(); return 44100; }//spec.freq; }
 signals:
    void onNewFrame(QPixmap frame);
 private:
    //AVFormatContext* audioFormat;
    //AVCodecContext* audioCodec;
-   QMutex initLocker;
-   void init(int width, int height, QString audioOutput);
-   int width;
-   int height;
+   QFuture<void> initFuture;
+   void init(int width, int height);
+   int w;
+   int h;
+   //SDL_AudioSpec spec;
 };
