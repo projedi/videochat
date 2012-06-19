@@ -15,7 +15,7 @@ QList<QPair<QString,QString> > ALSAV4L2::microphones() {
 }
 
 ALSAV4L2::ALSAV4L2(QString camera, QString microphone) {
-   QtConcurrent::run(this, &ALSAV4L2::init, camera, microphone);
+   initFuture = QtConcurrent::run(this, &ALSAV4L2::init, camera, microphone);
 }
 
 ALSAV4L2::~ALSAV4L2() {
@@ -26,7 +26,6 @@ ALSAV4L2::~ALSAV4L2() {
 }
 
 void ALSAV4L2::init(QString camera, QString microphone) {
-   QMutexLocker l(&initLocker);
    QByteArray camName = camera.toAscii();
    QByteArray micName = microphone.toAscii();
 
@@ -76,12 +75,13 @@ void ALSAV4L2::videoWorker() {
 }
 
 void ALSAV4L2::audioWorker() {
-   /*
    int pts = 0;
    int got_frame;
    while(true) {
       AVPacket pkt;
       if(av_read_frame(aFormat,&pkt) < 0) cout << "Can't read frame" << endl;
+      uint8_t* data = pkt.data;
+      uint8_t size = pkt.size;
       while(pkt.size > 0) {
          AVFrame* frame = avcodec_alloc_frame();
          int len = avcodec_decode_audio4(aCodec,frame,&got_frame,&pkt);
@@ -94,7 +94,9 @@ void ALSAV4L2::audioWorker() {
          frame->pts = pts++;
          emit onNewAudioFrame(QAVFrame(frame));
       }
-      av_free_packet(&pkt);
+      if(pkt.side_data) cout << "We have side data" << endl;
+      pkt.data = data;
+      pkt.size = size;
+      //av_free_packet(&pkt);
    }
-   */
 }

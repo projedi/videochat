@@ -12,19 +12,19 @@ public:
    QList<QPair<QString,QString> > cameras();
    QList<QPair<QString,QString> > microphones();
 
-   int width() { QMutexLocker l(&initLocker); return vCodec->width; }
-   int height() { QMutexLocker l(&initLocker); return vCodec->height; }
-   PixelFormat pixelFormat() { QMutexLocker l(&initLocker); return vCodec->pix_fmt; }
-   int64_t channelLayout() { QMutexLocker l(&initLocker); return aCodec->channel_layout; }
-   AVSampleFormat sampleFormat() { QMutexLocker l(&initLocker); return aCodec->sample_fmt; }
-   int sampleRate() { QMutexLocker l(&initLocker); return aCodec->sample_rate; }
+   int width() { initFuture.waitForFinished(); return vCodec->width; }
+   int height() { initFuture.waitForFinished(); return vCodec->height; }
+   PixelFormat pixelFormat() { initFuture.waitForFinished(); return vCodec->pix_fmt; }
+   int64_t channelLayout() { initFuture.waitForFinished(); return aCodec->channel_layout; }
+   AVSampleFormat sampleFormat() { initFuture.waitForFinished(); return aCodec->sample_fmt; }
+   int sampleRate() { initFuture.waitForFinished(); return aCodec->sample_rate; }
 private:
    AVFormatContext* vFormat;
    AVFormatContext* aFormat;
    AVCodecContext* vCodec;
    AVCodecContext* aCodec;
 
-   QMutex initLocker;
+   QFuture<void> initFuture;
    void init(QString camera, QString microphone);
    void videoWorker();
    void audioWorker();
