@@ -24,23 +24,18 @@ using namespace std;
 //TODO: Have a philosophical talk with yourself on whether you
 //TODO: can allow abstract classes - not just interfaces
 
-class AVFrameData: public QSharedData {
-public:
-   AVFrameData() { }
-   AVFrameData(const AVFrameData &other): QSharedData(other), data(other.data) { }
-   ~AVFrameData() { }
-   AVFrame* data;
-};
-
 //Simple reference counting for AVFrame
 class QAVFrame {
 public:
-   QAVFrame() { d = new AVFrameData(); }
-   QAVFrame(AVFrame* frame){ d = new AVFrameData(); setData(frame); }
-   AVFrame* data() const { return d->data; }
-   void setData(AVFrame* frame) { d->data = frame; }
+   QAVFrame() { d = avcodec_alloc_frame(); c = new int(1); }
+   QAVFrame(AVFrame* frame){ d = frame; c = new int(1); }
+   QAVFrame(const QAVFrame &other) { QMutexLocker l(&m); c = other.c; (*c)++; d = other.d; }
+   ~QAVFrame() { QMutexLocker l(&m); (*c)--; if(*c == 0) { delete c; av_free(d); }}
+   AVFrame* data() const { return d; }
 private:
-   QSharedDataPointer<AVFrameData> d;
+   AVFrame* d;
+   int *c;
+   QMutex m;
 };
 
 //TODO: It doesn't really require a "Device". Use more generic term.
