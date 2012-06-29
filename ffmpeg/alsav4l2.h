@@ -18,17 +18,11 @@ public:
    int64_t channelLayout() { initFuture.waitForFinished(); return aCodec->channel_layout; }
    AVSampleFormat sampleFormat() { initFuture.waitForFinished(); return aCodec->sample_fmt; }
    int sampleRate() { initFuture.waitForFinished(); return aCodec->sample_rate; }
-   AVCodecContext* audioCodec() { initFuture.waitForFinished(); return aCodec; }
 private:
    AVFormatContext* vFormat;
    AVFormatContext* aFormat;
    AVCodecContext* vCodec;
    AVCodecContext* aCodec;
-
-   //int64_t dts;
-   //int64_t pts;
-   //int64_t next_pts;
-   //int64_t next_dts;
 
    QFuture<void> initFuture;
    void init(QString camera, QString microphone);
