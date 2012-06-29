@@ -54,7 +54,7 @@ void ALSAV4L2::init(QString camera, QString microphone) {
       cout << "Can't associate codec on input for ALSA" << endl;
 
    QtConcurrent::run(this, &ALSAV4L2::videoWorker);
-   QtConcurrent::run(this, &ALSAV4L2::audioWorker);
+   //QtConcurrent::run(this, &ALSAV4L2::audioWorker);
 }
 
 void ALSAV4L2::videoWorker() {
@@ -90,8 +90,7 @@ void ALSAV4L2::audioWorker() {
          if(len < 0) cout << "Can't decode pkt" << endl;
          pkt.data += len;
          pkt.size -= len;
-         //TODO: proper pts handling
-         frame->pts = pts++;
+         frame->pts = av_frame_get_best_effort_timestamp(frame);
          emit onNewAudioFrame(QAVFrame(frame));
       }
       pkt.data = data;
