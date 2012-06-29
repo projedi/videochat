@@ -16,7 +16,6 @@ public:
    int64_t channelLayout() { initFuture.waitForFinished(); return aCodec->channel_layout; }
    AVSampleFormat sampleFormat() { initFuture.waitForFinished(); return aCodec->sample_fmt; }
    int sampleRate() { initFuture.waitForFinished(); return aCodec->sample_rate; }
-   AVCodecContext* audioCodec() { initFuture.waitForFinished(); return aCodec; }
 private:
    AVFormatContext* format;
    AVCodecContext* vCodec;
