@@ -86,7 +86,7 @@ radius: 1.35, stop: 0 #fff, stop: 1 #ccc);
 }</string>
   </property>
   <widget class="QWidget" name="centralWidget">
-   <widget class="QLabel" name="labelWebcam">
+   <widget class="Player" name="playerLocal">
     <property name="geometry">
      <rect>
       <x>300</x>
@@ -95,14 +95,8 @@ radius: 1.35, stop: 0 #fff, stop: 1 #ccc);
       <height>91</height>
      </rect>
     </property>
-    <property name="frameShape">
-     <enum>QFrame::Box</enum>
-    </property>
-    <property name="text">
-     <string/>
-    </property>
    </widget>
-   <widget class="QLabel" name="labelRemote">
+   <widget class="Player" name="playerRemote">
     <property name="geometry">
      <rect>
       <x>0</x>
@@ -110,12 +104,6 @@ radius: 1.35, stop: 0 #fff, stop: 1 #ccc);
       <width>301</width>
       <height>241</height>
      </rect>
-    </property>
-    <property name="frameShape">
-     <enum>QFrame::Box</enum>
-    </property>
-    <property name="text">
-     <string/>
     </property>
    </widget>
    <widget class="QListWidget" name="listContacts">
