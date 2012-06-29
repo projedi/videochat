@@ -18,7 +18,6 @@ void Player::newVideoFrame(QAVFrame frame) {
    emit onNewFrame(QPixmap::fromImage(img));
 }
 
-//TODO: Add audio output
 void Player::newAudioFrame(QAVFrame frame) {
 
 }

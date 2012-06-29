@@ -5,13 +5,14 @@ void FFConnector::ffConnect(FFSource* source, FFSink* sink) {
                                 , source->width(), source->height(), source->pixelFormat()
                                 , sink->width(), sink->height(), sink->pixelFormat()
                                 , SWS_BICUBIC, 0, 0, 0);
+   /*
    resampler = swr_alloc_set_opts( 0, sink->channelLayout(), sink->sampleFormat()
                                  , sink->sampleRate(), source->channelLayout()
                                  , source->sampleFormat(), source->sampleRate()
                                  , 0, 0);
-   //TODO: Should I add Qt::QueuedConnection? ANALYZE!
+                                 */
    connect(source, SIGNAL(onNewVideoFrame(QAVFrame)), SLOT(newVideoFrame(QAVFrame)));
-   connect(source, SIGNAL(onNewAudioFrame(QAVFrame)), SLOT(newAudioFrame(QAVFrame)));
+   //connect(source, SIGNAL(onNewAudioFrame(QAVFrame)), SLOT(newAudioFrame(QAVFrame)));
    this->source = source;
    this->sink = sink;
    w = sink->width();
@@ -35,10 +36,22 @@ void FFConnector::newVideoFrame(QAVFrame frame) {
    newFrame->height = h;
    //TODO: better time scaling
    newFrame->pts = frame.data()->pts;
-   sink->newVideoFrame(QAVFrame(newFrame));
+   sink->newVideoFrame(QAVFrame(newFrame,true));
 }
 
 void FFConnector::newAudioFrame(QAVFrame frame) {
-   //TODO: Check if I really need a resampler
-   sink->newAudioFrame(frame);
+   /*
+   AVFrame* newFrame = avcodec_alloc_frame();
+   newFrame->nb_samples = 100;
+   int ch = 2;
+   int buf_size = av_samples_get_buffer_size( 0, ch
+                                            , newFrame->nb_samples, sink->sampleFormat()
+                                            , 0);
+   const uint8_t* buf = new uint8_t[buf_size];
+   const uint8_t *in[] = { frame.data()->data[0] };
+   avcodec_fill_audio_frame(newFrame, 2, sink->sampleFormat(), buf, buf_size, 0);
+   swr_convert( resampler, newFrame->data, newFrame->nb_samples
+              , in, frame.data()->nb_samples);
+   sink->newAudioFrame(QAVFrame(newFrame));
+   */
 }

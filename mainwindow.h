@@ -28,13 +28,13 @@ private slots:
 private:
    Ui::MainWindow *ui;
    ALSAV4L2* local;
-   //Server* server;
+   Server* server;
    //Client* client;
    Player* localPlayer;
    //Player* clientPlayer;
-   //FFConnector* localToServer;
+   FFConnector localToServer;
    FFConnector localToPlayer;
-   //FFConnector* clientToPlayer;
+   //FFConnector clientToPlayer;
 };
 
 #endif // MAINWINDOW_H

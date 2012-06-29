@@ -5,7 +5,7 @@
 #-------------------------------------------------
 
 QT       += core gui
-LIBS += -lavcodec -lavformat -lavdevice -lswscale -lavutil -lswresample
+LIBS += -lavcodec -lavformat -lavdevice -lswscale -lavutil -lswresample -lx264
 QMAKE_CXXFLAGS = -D__STDC_CONSTANT_MACROS
 
 #unix {
@@ -26,12 +26,14 @@ SOURCES += main.cpp \
            mainwindow.cpp \
            ffmpeg.cpp \
            ffmpeg/alsav4l2.cpp \
-           ffmpeg/player.cpp
+           ffmpeg/player.cpp \
+           ffmpeg/server.cpp
 
 HEADERS  += mainwindow.h \
             ffmpeg.h \
             ffmpeg/alsav4l2.h \
-            ffmpeg/player.h
+            ffmpeg/player.h \
+            ffmpeg/server.h
 
 FORMS    += mainwindow.ui
 

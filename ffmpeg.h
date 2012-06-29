@@ -28,11 +28,12 @@ using namespace std;
 class QAVFrame {
 public:
    QAVFrame() { d = avcodec_alloc_frame(); c = new int(1); }
-   QAVFrame(AVFrame* frame){ d = frame; c = new int(1); }
-   QAVFrame(const QAVFrame &other) { QMutexLocker l(&m); c = other.c; (*c)++; d = other.d; }
-   ~QAVFrame() { QMutexLocker l(&m); (*c)--; if(*c == 0) { delete c; av_free(d); }}
+   QAVFrame(AVFrame* frame, bool dirty=false){ this->dirty = dirty; d = frame; c = new int(1); }
+   QAVFrame(const QAVFrame &other) { QMutexLocker l(&m); c = other.c; (*c)++; d = other.d; dirty = other.dirty; }
+   ~QAVFrame() { QMutexLocker l(&m); (*c)--; if(*c == 0) { delete c; if(dirty) avpicture_free((AVPicture*)d); av_free(d); }}
    AVFrame* data() const { return d; }
 private:
+   bool dirty;
    AVFrame* d;
    int *c;
    QMutex m;
@@ -47,6 +48,7 @@ public:
    virtual int64_t channelLayout() = 0;
    virtual AVSampleFormat sampleFormat() = 0;
    virtual int sampleRate() = 0;
+   virtual AVCodecContext* audioCodec() = 0;
 };
 
 class FFSource: public QObject, public FFDevice {
@@ -93,4 +95,4 @@ class FFHardware {
 #include "ffmpeg/alsav4l2.h"
 //#include "ffmpeg/client.h"
 #include "ffmpeg/player.h"
-//#include "ffmpeg/server.h"
+#include "ffmpeg/server.h"

@@ -1,18 +1,30 @@
+#pragma once
+
 #include "ffmpeg.h"
 
-class Server: public FFSink, public FFVideoDevice {
+class Server: public FFSink {
    Q_OBJECT 
 public:
-   Server(QString port);
+   Server(QString file);
    ~Server();
-   void newVideoFrame(AVFrame* frame);
-   void newAudioFrame(AVFrame* frame);
-   int getWidth() { QMutexLocker(&initLocker); return codec->width; }
-   int getHeight() { QMutexLocker(&initLocker); return codec->height; }
-   PixelFormat getPixelFormat() { QMutexLocker(&initLocker); return codec->pix_fmt; }
+   void newVideoFrame(QAVFrame frame);
+   void newAudioFrame(QAVFrame frame);
+
+   int width() { initFuture.waitForFinished(); return vCodec->width; }
+   int height() { initFuture.waitForFinished(); return vCodec->height; }
+   PixelFormat pixelFormat() { initFuture.waitForFinished(); return vCodec->pix_fmt; }
+   int64_t channelLayout() { initFuture.waitForFinished(); return aCodec->channel_layout; }
+   AVSampleFormat sampleFormat() { initFuture.waitForFinished(); return aCodec->sample_fmt; }
+   int sampleRate() { initFuture.waitForFinished(); return aCodec->sample_rate; }
+   AVCodecContext* audioCodec() { initFuture.waitForFinished(); return aCodec; }
 private:
    AVFormatContext* format;
-   AVCodecContext* videoCodec;
-   AVCodecContext* audioCodec;
-   QMutex initLocker;
-}
+   AVCodecContext* vCodec;
+   AVCodecContext* aCodec;
+   AVStream* vStream;
+   AVStream* aStream;
+   QFuture<void> initFuture;
+   QFuture<void> videoWorkerFuture;
+   void videoWorker(QAVFrame frame);
+   void init(QString file);
+};

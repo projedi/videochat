@@ -19,8 +19,10 @@ ALSAV4L2::ALSAV4L2(QString camera, QString microphone) {
 }
 
 ALSAV4L2::~ALSAV4L2() {
+   /*
    avcodec_close(aCodec); delete aCodec;
    avformat_free_context(aFormat); delete aFormat;
+   */
    avcodec_close(vCodec); delete vCodec;
    avformat_free_context(vFormat); delete vFormat;
 }
@@ -40,7 +42,7 @@ void ALSAV4L2::init(QString camera, QString microphone) {
    if(!vDecoder) cout << "Can't find decoder for v4l2" << endl;
    if(avcodec_open2(vCodec,vDecoder,0) < 0)
       cout << "Can't associate codec on input for v4l2" << endl;
-
+/*
    aFormat = avformat_alloc_context();
    if(avformat_open_input(&aFormat,micName.data(),av_find_input_format("alsa"),0) < 0)
       cout << "Can't open ALSA input" << endl;
@@ -52,29 +54,33 @@ void ALSAV4L2::init(QString camera, QString microphone) {
    if(!aDecoder) cout << "Can't find decoder for ALSA" << endl;
    if(avcodec_open2(aCodec,aDecoder,0) < 0)
       cout << "Can't associate codec on input for ALSA" << endl;
+*/
+   //next_pts = AV_NOPTS_VALUE;
+   //next_dts = AV_NOPTS_VALUE;
 
    QtConcurrent::run(this, &ALSAV4L2::videoWorker);
-   QtConcurrent::run(this, &ALSAV4L2::audioWorker);
+   //QtConcurrent::run(this, &ALSAV4L2::audioWorker);
 }
 
 void ALSAV4L2::videoWorker() {
-   int pts = 0;
-   int frameFinished;
    while(true) {
       AVPacket pkt;
-      AVFrame* frame = avcodec_alloc_frame();
-      //TODO: technically I should check that frame is finished
       if(av_read_frame(vFormat,&pkt) < 0) cout << "Can't read frame" << endl;
-      if(avcodec_decode_video2(vCodec,frame,&frameFinished,&pkt) < 0)
+      int got_picture;
+      AVFrame* frame = avcodec_alloc_frame();
+      if(avcodec_decode_video2(vCodec,frame,&got_picture,&pkt) < 0) {
          cout << "Can't decode pkt" << endl;
-      //TODO: proper pts handling
-      frame->pts = pts++;
+         continue;
+      }
+      if(!got_picture) continue;
+      frame->pts = av_frame_get_best_effort_timestamp(frame);
       emit onNewVideoFrame(QAVFrame(frame));
       av_free_packet(&pkt);
    }
 }
 
 void ALSAV4L2::audioWorker() {
+   /*
    int pts = 0;
    int got_frame;
    while(true) {
@@ -99,4 +105,5 @@ void ALSAV4L2::audioWorker() {
       pkt.size = size;
       //av_free_packet(&pkt);
    }
+   */
 }
