@@ -9,77 +9,145 @@ extern "C" {
    //#include <libavutil/opt.h>
 }
 
-#include <QObject>
-
-//#include <QImage>
-//#include <QObject>
-//#include <QString>
-//#include <QtConcurrentRun>
-//#include <QSharedData>
-//#include <QFutureWatcher>
-//#include <QMutex>
-//#include <QMutexLocker>
+#include <QMutexLocker>
+#include <QFuture>
 
 #include <iostream>
 using namespace std;
 
+/*
 //Simple reference counting for AVFrame
 class QAVFrame {
 public:
    QAVFrame() { cout << "QAVFrame constructed with no arguments" << endl; }
    QAVFrame(AVFrame* frame){ d = frame; c = new int(1); }
-   QAVFrame(const QAVFrame &o) { QMutexLocker l(&m); c = o.c; (*c)++; d = o.d; }
+   QAVFrame(const QAVFrame &o) {
+      QMutexLocker l(&m); c = o.c; (*c)++; d = o.d; t = o.t;
+   }
    //TODO: Check if d structure leaks here since I don't do delete.
    ~QAVFrame() { QMutexLocker l(&m); (*c)--; if(*c == 0) { delete c; av_free(d); } }
    AVFrame* data() const { return d; }
+   FrameType type() { return t; }
 private:
+   FrameType t;
    AVFrame* d;
    int *c;
    QMutex m;
 };
+*/
 
-class FFParams {
+enum MediaType { Video, Audio };
+
+//TODO: add EOF marker
+//TODO: add NODATA marker
+class QAVFrame {
 public:
-   virtual int width() = 0;
-   virtual int height() = 0;
-   virtual PixelFormat pixelFormat() = 0;
-   virtual int64_t channelLayout() = 0;
-   virtual AVSampleFormat sampleFormat() = 0;
-   virtual int sampleRate() = 0;
-}
-
-class FFSource: public QObject, public FFParams {
-   Q_OBJECT
-signals:
-   void onNewVideoFrame(QAVFrame frame);
-   void onNewAudioFrame(QAVFrame frame);
-};
-
-class FFSink: public QObject, public FFParams {
-   Q_OBJECT
-public:
-   explicit FFSink(QObject *parent = 0): QObject(parent) { }
-   ~FFSink() { clearSource(); }
-   void setSource(FFSource* src);
-   void clearSource();
-private slots:
-   virtual void newVideoFrame(QAVFrame frame) = 0;
-   virtual void newAudioFrame(QAVFrame frame) = 0;
+   QFrame();
+   ~QFrame();
 private:
-   QAVFrame rescale(QAVFrame frame);
-   QAVFrame resample(QAVFrame frame);
-   FFSource* source;
-   SwsContext* scaler;
-   SwrContext* resampler;
+   AVFrame* data;
+   MediaType type;
+   int destStream;
 };
 
-class FFHardware {
-   virtual QList<QPair<QString,QString> > cameras() = 0;
-   virtual QList<QPair<QString,QString> > microphones() = 0;
+struct StreamInfo {
+   MediaType type;
+   AVCodecContext* codec;
+   int index;
+   union {
+      struct {
+         int width;
+         int height;
+         PixelFormat pixelFormat;
+      } video;
+      struct {
+         int64_t channelLayout;
+         AVSampleFormat sampleFormat;
+         int sampleRate;
+      } audio;
+   };
+};
+
+class Output {
+public:
+   virtual void newFrame(QAVFrame frame) = 0;
+};
+
+//TODO: There might be some races
+class InputGeneric {
+public:
+   enum State { Running, Paused, Stopped };
+
+   InputGeneric();
+   InputGeneric(QString format, QString file);
+   ~InputGeneric();
+   void setSource(QString format, QString file);
+
+   int streamCount();
+   StreamInfo streamInfo(int stream);
+
+   // Gives the current state. Won't tell if the state is changing due to setState.
+   State state();
+   // Will not react instantly.
+   void setState(State state);
+
+   //if destStream == -1 creates new
+   //returns stream in destination or -1 if error
+   int addOutput(Output* out, int srcStream, int destStream);
+   //if srcStream == -1 removes all connections to this output
+   void removeOutput(Output* out, int srcStream);
+private:
+   struct Stream {
+      StreamInfo info;
+
+      Output* output;
+      int destIndex;
+      union {
+         SwsContext* scaler;
+         SwrContext* resampler;
+      };
+   };
+   AVFormatContext* format;
+   QList<Stream> streams;
+
+   //QFuture<void> initFuture;
+   //void init(QString format, QString file);
+   State curState;
+   State wantedState;
+   void worker();
+};
+
+//Default video is x264 baseline, default audio is AAC.
+//Container is mpegts
+class OutputGeneric: Output {
+public:
+   OutputGeneric();
+   OutputGeneric(QString format, QString file);
+   ~OutputGeneric();
+   void setDestination(QString format, QString file);
+
+   int streamCount();
+   StreamInfo streamInfo(int stream);
+   int addStream(StreamInfo info);
+   //TODO: how should input react on that?
+   int removeStream(StreamInfo info);
+
+   void newFrame(QAVFrame frame);
+private:
+   AVFormatContext* format;
+   QList<StreamInfo> streams;
+   //QFuture<void> initFuture;
+   //void init(QString format, QString file);
+   void worker();
+};
+
+class Hardware {
+   virtual QList< QPair<QString,QString> > cameras() = 0;
+   virtual QList< QPair<QString,QString> > microphones() = 0;
 };
 
 // Not to clutter includes for users
-#include "ffmpeg/alsav4l2.h"
-#include "ffmpeg/client.h"
-#include "ffmpeg/player.h"
-#include "ffmpeg/server.h"
+//#include "ffmpeg/alsav4l2.h"
+//#include "ffmpeg/client.h"
+//#include "ffmpeg/player.h"
+//#include "ffmpeg/server.h"
