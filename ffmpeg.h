@@ -15,27 +15,6 @@ extern "C" {
 #include <iostream>
 using namespace std;
 
-/*
-//Simple reference counting for AVFrame
-class QAVFrame {
-public:
-   QAVFrame() { cout << "QAVFrame constructed with no arguments" << endl; }
-   QAVFrame(AVFrame* frame){ d = frame; c = new int(1); }
-   QAVFrame(const QAVFrame &o) {
-      QMutexLocker l(&m); c = o.c; (*c)++; d = o.d; t = o.t;
-   }
-   //TODO: Check if d structure leaks here since I don't do delete.
-   ~QAVFrame() { QMutexLocker l(&m); (*c)--; if(*c == 0) { delete c; av_free(d); } }
-   AVFrame* data() const { return d; }
-   FrameType type() { return t; }
-private:
-   FrameType t;
-   AVFrame* d;
-   int *c;
-   QMutex m;
-};
-*/
-
 enum MediaType { Video, Audio };
 
 //TODO: add EOF marker
@@ -52,13 +31,13 @@ private:
 
 struct StreamInfo {
    MediaType type;
-   AVCodecContext* codec;
-   int index;
+   int bitrate;
    union {
       struct {
          int width;
          int height;
          PixelFormat pixelFormat;
+         int fps;
       } video;
       struct {
          int64_t channelLayout;
@@ -70,50 +49,73 @@ struct StreamInfo {
 
 class Output {
 public:
-   virtual void newFrame(QAVFrame frame) = 0;
-};
-
-//TODO: There might be some races
-class InputGeneric {
-public:
-   enum State { Running, Paused, Stopped };
-
-   InputGeneric();
-   InputGeneric(QString format, QString file);
-   ~InputGeneric();
-   void setSource(QString format, QString file);
-
-   int streamCount();
-   StreamInfo streamInfo(int stream);
-
-   // Gives the current state. Won't tell if the state is changing due to setState.
-   State state();
-   // Will not react instantly.
-   void setState(State state);
-
-   //if destStream == -1 creates new
-   //returns stream in destination or -1 if error
-   int addOutput(Output* out, int srcStream, int destStream);
-   //if srcStream == -1 removes all connections to this output
-   void removeOutput(Output* out, int srcStream);
-private:
-   struct Stream {
-      StreamInfo info;
-
-      Output* output;
-      int destIndex;
+   class Stream {
+   public:
+      //Doesn't use pixelFormat and sampleFormat from StreamInfo
+      //Allocates AVCodec by itself
+      Stream(StreamInfo,AVCodec**,Output*,index);
+      ~Stream();
+      AVPacket* encode(AVFrame*);
+      void sendToOwner(AVPacket*);
+      StreamInfo info();
+      int getIndex();
+   private:
+      MediaType type;
       union {
          SwsContext* scaler;
          SwrContext* resampler;
       };
+      AVCodecContext* codec;
+      Output* owner;
+      int index;
    };
-   AVFormatContext* format;
-   QList<Stream> streams;
 
-   //QFuture<void> initFuture;
-   //void init(QString format, QString file);
-   State curState;
-   State wantedState;
+   virtual ~Output();
+   QList<Stream*> getStreams() const;
+   virtual Stream* addStream(StreamInfo) = 0;
+   virtual void sendPacket(AVPacket*) = 0;
+private:
+   QList<Stream*> streams;
+};
+
+class Input {
+public:
+   enum State { Playing, Paused };
+   class Stream {
+   public:
+      Stream(MediaType,AVCodecContext*,Input*);
+      ~Stream();
+      AVFrame* decode(AVPacket*);
+      void broadcast(AVFrame*);
+      void subscribe(Output::Stream*);
+      void unsubscribe(Output::Stream*);
+      QList<Output::Stream*> getSubscribers();
+      StreamInfo info();
+      Input* getOwner();
+   private:
+      MediaType type;
+      AVCodecContext* codec;
+      QList<Output::Stream*> subscribers;
+      Input* owner;
+   };
+
+   virtual ~Input();
+   QList<Stream*> getStreams() const;
+   State getState();
+   void setState(State state);
+private:
+   State state;
+   QList<Stream*> streams;
+   QFuture<void> workerFuture;
+   virtual void worker() = 0;
+};
+
+class InputGeneric: Input {
+public:
+   InputGeneric(QString fmt, QString file);
+   ~InputGeneric();
+private:
+   AVFormatContext* format;
    void worker();
 };
 
@@ -121,29 +123,33 @@ private:
 //Container is mpegts
 class OutputGeneric: Output {
 public:
-   OutputGeneric();
-   OutputGeneric(QString format, QString file);
+   OutputGeneric(QString fmt, QString file);
    ~OutputGeneric();
-   void setDestination(QString format, QString file);
-
-   int streamCount();
-   StreamInfo streamInfo(int stream);
-   int addStream(StreamInfo info);
-   //TODO: how should input react on that?
-   int removeStream(StreamInfo info);
-
-   void newFrame(QAVFrame frame);
+   Stream* addStream(StreamInfo);
+   void sendPacket(AVPacket*);
 private:
    AVFormatContext* format;
-   QList<StreamInfo> streams;
-   //QFuture<void> initFuture;
-   //void init(QString format, QString file);
-   void worker();
 };
 
-class Hardware {
-   virtual QList< QPair<QString,QString> > cameras() = 0;
-   virtual QList< QPair<QString,QString> > microphones() = 0;
+class AudioHardware: Input {
+public:
+   //Gets all microphones on computer, platform dependent
+   AudioHardware();
+   ~AudioHardware();
+private:
+   QList< QPair<QString,QString> > microphones;
+   QList<AVFormatContext*> formats;
+};
+
+class VideoHardware: Input {
+public:
+   //Gets all cameras on computer, platform dependent
+   VideoHardware();
+   ~VideoHardware();
+private:
+   QList< QPair<QString,QString> > cameras;
+   QList<Input*> inputs;
+   void worker();
 };
 
 // Not to clutter includes for users
