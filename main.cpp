@@ -1,4 +1,5 @@
 #include <QtGui/QApplication>
+#include <QMetaType>
 #include "mainwindow.h"
 #include "ffmpeg.h"
 
@@ -10,8 +11,6 @@ int main(int argc, char *argv[])
     avdevice_register_all();
     av_register_all();
     avformat_network_init();
-
-    qRegisterMetaType<QAVFrame>("QAVFrame");
 
     MainWindow w;
     w.show();

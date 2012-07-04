@@ -7,18 +7,13 @@ MainWindow::MainWindow(QWidget *parent): QMainWindow(parent), ui(new Ui::MainWin
 
 MainWindow::~MainWindow() {
     delete ui;
-    delete local;
-    delete server;
+    delete camera;
     delete client;
+    delete server;
 }
 
 void MainWindow::on_buttonCall_clicked() {
-   local = new ALSAV4L2("/dev/video0", "hw:0"); 
-   server = new Server("udp://localhost:8080");
-   client = new Client("udp://localhost:8081");
-   server.setSource(local);
-   ui->playerLocal.setSource(local);
-   ui->playerClient.setSource(client);
+   camera = new VideoHardware();
 }
 
 void MainWindow::on_buttonSendFile_clicked() {

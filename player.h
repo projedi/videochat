@@ -1,9 +1,10 @@
 #pragma once
 
 #include "ffmpeg.h"
+#include <QPainter>
+#include <QWidget>
 
-class Player: Output, QWidget {
-Q_OBJECT
+class Player: public Output, public QWidget {
 public:
    Player(QWidget* parent = 0);
    ~Player();

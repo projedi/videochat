@@ -4,7 +4,7 @@ Player::Player(QWidget* parent): QWidget(parent) { }
 
 Player::~Player() { }
 
-Stream* Player::addStream(StreamInfo info) {
+Output::Stream* Player::addStream(StreamInfo info) {
    if(info.type != Video) return 0;
    AVCodec* decoder = avcodec_find_decoder(CODEC_ID_RAWVIDEO);
    Stream* stream = new Stream(info,&decoder,this,0);
@@ -13,14 +13,14 @@ Stream* Player::addStream(StreamInfo info) {
 }
 
 void Player::sendPacket(AVPacket* pkt) {
-   if(streams[pkt->stream_index].info().type == Video) {
-      image = QImage(pkt->data, this->width, this->height, QImage::Format_RGB32);
+   if(streams[pkt->stream_index]->info().type == Video) {
+      image = QImage(pkt->data, this->width(), this->height(), QImage::Format_RGB32);
       update();
    }
    av_free_packet(pkt);
 }
 
-void Player::paintEvent(QPaintEvent* event) {
+void Player::paintEvent(QPaintEvent*) {
    QPainter painter(this);
    painter.drawImage(QPointF(0,0),image);
 }

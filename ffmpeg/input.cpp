@@ -1,64 +1,75 @@
+#include "ffmpeg.h"
+#include <QtConcurrentRun>
 
-Input::Stream::Stream(MediaType type, AVCodecContext* codec) {
+Input::Stream::Stream(MediaType type, AVCodecContext* codec, Input* owner) {
    this->type = type;
    this->codec = codec;
+   this->owner = owner;
 }
 
 Input::Stream::~Stream() { avcodec_close(codec); av_free(codec); }
 
 AVFrame* Input::Stream::decode(AVPacket* pkt) {
-   AVFrame* frame = avcodec_alloc_frame();
    if(type == Video) {
-      if(avcodec_decode_video2(codec,frame,&got_picture,&pkt) < 0) return;
+      int got_picture;
+      AVFrame* frame = avcodec_alloc_frame();
+      if(avcodec_decode_video2(codec,frame,&got_picture,pkt) < 0) return 0;
       av_free_packet(pkt);
-      if(!got_picture) { av_free(frame); return; }
-      frame->pts = best_effort_timestamp(frame);
+      if(!got_picture) { av_free(frame); return 0; }
+      frame->pts = av_frame_get_best_effort_timestamp(frame);
+      return frame;
    } else if(type == Audio) {
       //TODO: Implement
-   }
-   return frame;
+      return 0;
+   } else return 0;
 }
 
 void Input::Stream::broadcast(AVFrame* frame) {
+   if(!frame) return;
    QList<Output::Stream*>::iterator i;
-   for(i=subscribers.begin();i!=subscribers.end();i++)
-      (*i).sendToOwner((*i).encode(frame));
+   for(i = subscribers.begin(); i != subscribers.end(); i++)
+      (*i)->sendToOwner((*i)->encode(frame));
 }
 
 void Input::Stream::subscribe(Output::Stream* client) { subscribers.append(client); }
 
 void Input::Stream::unsubscribe(Output::Stream* client) { subscribers.removeOne(client); }
 
+QList<Output::Stream*> Input::Stream::getSubscribers() const { return subscribers; }
+
 StreamInfo Input::Stream::info() {
    StreamInfo info;
    info.type = type;
-   info.bitrate = codec->bit_rate;
    if(type == Video) {
       info.video.width = codec->width;
       info.video.height = codec->height;
       info.video.pixelFormat = codec->pix_fmt;
       info.video.fps = codec->time_base.den;
+      info.bitrate = codec->bit_rate;
    } else if(type == Audio) {
       info.audio.channelLayout = codec->channel_layout; 
       info.audio.sampleFormat = codec->sample_fmt;
       info.audio.sampleRate = codec->sample_rate;
+      info.bitrate = codec->bit_rate;
    }
    return info;
 }
+
+Input* Input::Stream::getOwner() { return owner; }
 
 Input::~Input() {
    setState(Paused);
    workerFuture.waitForFinished();
 }
 
-QList<Stream*> Input::getStreams() const { return streams; }
+QList<Input::Stream*> Input::getStreams() const { return streams; }
 
-State Input::getState() { return state; }
+Input::State Input::getState() { return state; }
 
-void Input::setState(State state) {
+void Input::setState(Input::State state) {
    if(state == this->state) return;
    this->state = state;
-   if(state == Playing) workerFuture = QtConcurrent::Run(this,&Input::worker);
+   if(state == Playing) workerFuture = QtConcurrent::run(this,&Input::worker);
 }
 
 InputGeneric::InputGeneric(QString fmt, QString file) {
@@ -71,22 +82,26 @@ InputGeneric::InputGeneric(QString fmt, QString file) {
       AVStream* avstream = format->streams[i];
       Stream* stream;
       if(avstream->codec->codec_type == AVMEDIA_TYPE_VIDEO) {
-         stream = new Stream(Video,avstream->codec);
+         stream = new Stream(Video,avstream->codec,this);
          streams.append(stream); 
       } else if(avstream->codec->codec_type == AVMEDIA_TYPE_AUDIO) {
-         stream = new Stream(Audio,avstream->codec);
+         stream = new Stream(Audio,avstream->codec,this);
          streams.append(stream); 
+      } else {
+         stream = new Stream(Other,0,this);
+         streams.append(stream);
       }
    }
    state = Paused;
 }
 
-~InputGeneric::InputGeneric() { avformat_close_input(&format); }
+InputGeneric::~InputGeneric() { avformat_close_input(&format); }
 
 void InputGeneric::worker() {
+   //TODO: If lots of errors, then what?
    while(state != Paused) {
-      AVPacket* pkt;
-      av_read_frame(format,pkt);
+      AVPacket* pkt = new AVPacket();
+      if(av_read_frame(format,pkt) < 0) continue;
       Stream* stream = streams[pkt->stream_index];
       stream->broadcast(stream->decode(pkt));
    }

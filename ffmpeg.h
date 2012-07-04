@@ -9,25 +9,13 @@ extern "C" {
    //#include <libavutil/opt.h>
 }
 
-#include <QMutexLocker>
+//#include <QMutexLocker>
 #include <QFuture>
 
-#include <iostream>
-using namespace std;
+//#include <iostream>
+//using namespace std;
 
-enum MediaType { Video, Audio };
-
-//TODO: add EOF marker
-//TODO: add NODATA marker
-class QAVFrame {
-public:
-   QFrame();
-   ~QFrame();
-private:
-   AVFrame* data;
-   MediaType type;
-   int destStream;
-};
+enum MediaType { Video, Audio, Other };
 
 struct StreamInfo {
    MediaType type;
@@ -52,9 +40,11 @@ public:
    class Stream {
    public:
       //Doesn't use pixelFormat and sampleFormat from StreamInfo
-      //Allocates AVCodec by itself
-      Stream(StreamInfo,AVCodec**,Output*,index);
+      //if encoder is 0, uses x264 for video, mp2 for audio
+      //Throws 1 if can't associate codec context with encoder
+      Stream(StreamInfo,AVCodec** encoder,Output* owner,int index) throw(int);
       ~Stream();
+      //Returns 0 on fail
       AVPacket* encode(AVFrame*);
       void sendToOwner(AVPacket*);
       StreamInfo info();
@@ -74,7 +64,7 @@ public:
    QList<Stream*> getStreams() const;
    virtual Stream* addStream(StreamInfo) = 0;
    virtual void sendPacket(AVPacket*) = 0;
-private:
+protected:
    QList<Stream*> streams;
 };
 
@@ -89,7 +79,7 @@ public:
       void broadcast(AVFrame*);
       void subscribe(Output::Stream*);
       void unsubscribe(Output::Stream*);
-      QList<Output::Stream*> getSubscribers();
+      QList<Output::Stream*> getSubscribers() const;
       StreamInfo info();
       Input* getOwner();
    private:
@@ -103,14 +93,14 @@ public:
    QList<Stream*> getStreams() const;
    State getState();
    void setState(State state);
-private:
+protected:
    State state;
    QList<Stream*> streams;
    QFuture<void> workerFuture;
    virtual void worker() = 0;
 };
 
-class InputGeneric: Input {
+class InputGeneric: public Input {
 public:
    InputGeneric(QString fmt, QString file);
    ~InputGeneric();
@@ -119,9 +109,9 @@ private:
    void worker();
 };
 
-//Default video is x264 baseline, default audio is AAC.
+//Default video is x264 baseline, default audio is MP2.
 //Container is mpegts
-class OutputGeneric: Output {
+class OutputGeneric: public Output {
 public:
    OutputGeneric(QString fmt, QString file);
    ~OutputGeneric();
@@ -131,17 +121,18 @@ private:
    AVFormatContext* format;
 };
 
-class AudioHardware: Input {
+class AudioHardware: public Input {
 public:
    //Gets all microphones on computer, platform dependent
    AudioHardware();
    ~AudioHardware();
 private:
    QList< QPair<QString,QString> > microphones;
-   QList<AVFormatContext*> formats;
+   QList<Input*> inputs;
+   void worker();
 };
 
-class VideoHardware: Input {
+class VideoHardware: public Input {
 public:
    //Gets all cameras on computer, platform dependent
    VideoHardware();

@@ -7,6 +7,8 @@
 QT       += core gui
 LIBS += -lavcodec -lavformat -lavdevice -lswscale -lavutil -lswresample -lx264
 QMAKE_CXXFLAGS = -D__STDC_CONSTANT_MACROS
+unix: DEFINES += LINUX
+win32: DEFINES += WIN32
 
 #unix {
 #   CONFIG += link_pkgconfig
@@ -24,16 +26,14 @@ TEMPLATE = app
 
 SOURCES += main.cpp \
            mainwindow.cpp \
-           ffmpeg.cpp \
-           ffmpeg/alsav4l2.cpp \
-           ffmpeg/player.cpp \
-           ffmpeg/server.cpp
+           ffmpeg/input.cpp \
+           ffmpeg/output.cpp \
+           ffmpeg/hardware.cpp \
+           ffmpeg/player.cpp
 
 HEADERS  += mainwindow.h \
             ffmpeg.h \
-            ffmpeg/alsav4l2.h \
-            ffmpeg/player.h \
-            ffmpeg/server.h
+            player.h
 
 FORMS    += mainwindow.ui
 

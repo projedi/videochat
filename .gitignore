@@ -1,5 +1,6 @@
 *.user
 *.o
+*.swp
 videochat-oldapi
 ui_mainwindow.h
 moc_*.cpp
