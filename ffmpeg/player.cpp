@@ -1,18 +1,26 @@
 #include "player.h"
 
-Player::Player(QWidget *parent) { }
+Player::Player(QWidget* parent): QWidget(parent) { }
 
-Player::~Player() { } 
+Player::~Player() { }
 
-void Player::newVideoFrame(QAVFrame frame) {
-   image = QImage( frame.data()->data[0], frame.data()->width, frame.data()->height
-                 , QImage::Format_RGB32);
-   update();
+Stream* Player::addStream(StreamInfo info) {
+   if(info.type != Video) return 0;
+   AVCodec* decoder = avcodec_find_decoder(CODEC_ID_RAWVIDEO);
+   Stream* stream = new Stream(info,&decoder,this,0);
+   streams.append(stream);
+   return stream;
 }
 
-void Player::newAudioFrame(QAVFrame frame) { }
+void Player::sendPacket(AVPacket* pkt) {
+   if(streams[pkt->stream_index].info().type == Video) {
+      image = QImage(pkt->data, this->width, this->height, QImage::Format_RGB32);
+      update();
+   }
+   av_free_packet(pkt);
+}
 
-void Player::paintEvent(QPaintEvent*) {
+void Player::paintEvent(QPaintEvent* event) {
    QPainter painter(this);
    painter.drawImage(QPointF(0,0),image);
 }
