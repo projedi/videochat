@@ -17,6 +17,7 @@ Output::Stream::Stream(StreamInfo info,AVCodec** encoder,Output* owner,int index
       codec->codec_id = (*encoder)->id;
       codec->bit_rate = info.bitrate;
       codec->flags2 |= CODEC_FLAG2_LOCAL_HEADER;
+         AVDictionary *dic = 0;
       if(type == Video) {
          //TODO: increase sanity
          if((*encoder)->id == CODEC_ID_RAWVIDEO) codec->pix_fmt = PIX_FMT_RGB32;
@@ -26,6 +27,11 @@ Output::Stream::Stream(StreamInfo info,AVCodec** encoder,Output* owner,int index
          codec->time_base.num = 1;
          codec->time_base.den = info.video.fps;
          codec->gop_size = 13;
+         if(codec->codec_id == CODEC_ID_H264) {
+            av_dict_set(&dic,"profile","baseline",0);
+            av_dict_set(&dic,"level","13",0);
+            codec->pix_fmt = PIX_FMT_YUV420P;
+         }
          //Oh, C++, you can't do that yourself.
          scaler = 0;
       } else {
@@ -33,7 +39,7 @@ Output::Stream::Stream(StreamInfo info,AVCodec** encoder,Output* owner,int index
          codec->sample_rate = info.audio.sampleRate;
          codec->channel_layout = info.audio.channelLayout;
       }
-      if(avcodec_open2(codec,*encoder,0)<0) throw 1;
+      if(avcodec_open2(codec,*encoder,&dic)<0) throw 1;
    }
 }
 
