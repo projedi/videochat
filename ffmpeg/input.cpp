@@ -8,6 +8,7 @@ Input::Stream::Stream(MediaType type, AVCodecContext* codec, Input* owner) {
    this->type = type;
    this->codec = codec;
    this->owner = owner;
+   pts = 0;
    if(type != Other) {
       AVCodec* decoder = avcodec_find_decoder(codec->codec_id);
       avcodec_open2(codec,decoder,0);
@@ -22,7 +23,8 @@ AVFrame* Input::Stream::decode(AVPacket* pkt) {
       AVFrame* frame = avcodec_alloc_frame();
       if(avcodec_decode_video2(codec,frame,&got_picture,pkt) < 0) return 0;
       if(!got_picture) { av_free(frame); return 0; }
-      frame->pts = av_frame_get_best_effort_timestamp(frame);
+      //frame->pts = av_frame_get_best_effort_timestamp(frame);
+      frame->pts = pts++;
       return frame;
    } else if(type == Audio) {
       //TODO: Implement
@@ -39,6 +41,7 @@ void Input::Stream::broadcast(AVFrame* frame) {
       subs->sendToOwner(pkt);
       //av_free_packet(pkt);
    }
+   av_free(frame);
 }
 
 void Input::Stream::subscribe(Output::Stream* client) { subscribers.append(client); }
@@ -114,6 +117,7 @@ void InputGeneric::worker() {
       AVPacket* pkt = new AVPacket();
       av_init_packet(pkt);
       if(av_read_frame(format,pkt) < 0) continue;
+      //cout << "On in: pts=" << pkt->pts << ";dts=" << pkt->dts << endl;
       Stream* stream = streams[pkt->stream_index];
       AVFrame* frame = stream->decode(pkt);
       stream->broadcast(frame);

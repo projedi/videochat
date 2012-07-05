@@ -16,6 +16,7 @@ Output::Stream::Stream(StreamInfo info,AVCodec** encoder,Output* owner,int index
       codec = avcodec_alloc_context3(*encoder);
       codec->codec_id = (*encoder)->id;
       codec->bit_rate = info.bitrate;
+      codec->flags2 |= CODEC_FLAG2_LOCAL_HEADER;
       if(type == Video) {
          //TODO: increase sanity
          if((*encoder)->id == CODEC_ID_RAWVIDEO) codec->pix_fmt = PIX_FMT_RGB32;
@@ -61,7 +62,8 @@ AVPacket* Output::Stream::encode(AVFrame* frame) {
       newFrame->width=codec->width;
       newFrame->height=codec->height;
       newFrame->pts=frame->pts;
-      av_free(frame);
+      //cout << "On frame: pts=" << frame->pts << endl;
+      //av_free(frame);
       res = avcodec_encode_video2(codec, pkt, newFrame, &got_packet);
    } else if(type == Audio) {
       //TODO: Implement
@@ -69,8 +71,10 @@ AVPacket* Output::Stream::encode(AVFrame* frame) {
    if(res < 0) { cout << "Couldn't encode" << endl; pkt = 0; }
    if(!res) {
       if(!got_packet) { cout << "Didn't get packet" << endl; av_free_packet(pkt); pkt = 0; }
-      pkt->stream_index = index;
-      if(codec->coded_frame->key_frame) pkt->flags|=AV_PKT_FLAG_KEY;
+      else {
+         pkt->stream_index = index;
+         if(codec->coded_frame->key_frame) pkt->flags|=AV_PKT_FLAG_KEY;
+      }
    }
    avpicture_free((AVPicture*)newFrame);
    av_free(newFrame);
@@ -102,6 +106,8 @@ StreamInfo Output::Stream::info() {
 
 int Output::Stream::getIndex() { return index; }
 
+AVCodecContext* Output::Stream::getCodec() { return codec; }
+
 Output::~Output() { }
 
 QList<Output::Stream*> Output::getStreams() const { return streams; }
@@ -121,24 +127,23 @@ OutputGeneric::~OutputGeneric() {
 }
 
 Output::Stream* OutputGeneric::addStream(StreamInfo info) {
-   AVCodec* encoder;
+   AVCodec* encoder = 0;
    try {
       Stream* stream = new Stream(info,&encoder,this,format->nb_streams);
-      avformat_new_stream(format,encoder);
+      AVStream* avstream = avformat_new_stream(format,encoder);
+      avstream->codec = stream->getCodec();
+      avformat_write_header(format,0);
       streams.append(stream);
       return stream;
    } catch(...) { return 0; }
 }
 
 void OutputGeneric::sendPacket(AVPacket* pkt) {
-   /*
-   if(pkt->pts != AV_NOPTS_VALUE) {
-      pkt->pts = av_rescale_q(pkt->pts, vCodec->time_base, vStream->time_base);
-   }
-   if(pkt->dts != AV_NOPTS_VALUE) {
-      pkt->dts = av_rescale_q(pkt->dts, vCodec->time_base, vStream->time_base);
-   }
-   */
-   //av_interleaved_write_frame(format,pkt);
-   //av_free_packet(pkt);
+   //cout << "On out: pts=" << pkt->pts << ";dts=" << pkt->dts << endl;
+   pkt->pts = av_rescale_q(pkt->pts,streams[pkt->stream_index]->getCodec()->time_base
+                         ,format->streams[pkt->stream_index]->time_base);
+   pkt->dts = av_rescale_q(pkt->dts,streams[pkt->stream_index]->getCodec()->time_base
+                         ,format->streams[pkt->stream_index]->time_base);
+   av_interleaved_write_frame(format,pkt);
+   av_free_packet(pkt);
 }

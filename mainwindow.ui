@@ -224,6 +224,32 @@ radius: 1.35, stop: 0 #fff, stop: 1 #ccc);
      <string>Remote audio audio</string>
     </property>
    </widget>
+   <widget class="QLineEdit" name="lineEditRemote">
+    <property name="geometry">
+     <rect>
+      <x>310</x>
+      <y>120</y>
+      <width>113</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>localhost:8081</string>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="lineEditLocal">
+    <property name="geometry">
+     <rect>
+      <x>310</x>
+      <y>100</y>
+      <width>113</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>localhost:8080</string>
+    </property>
+   </widget>
    <zorder>playerLocal</zorder>
    <zorder>playerRemote</zorder>
    <zorder>buttonCall</zorder>
@@ -236,6 +262,8 @@ radius: 1.35, stop: 0 #fff, stop: 1 #ccc);
    <zorder>comboBoxVideoDevsRemote</zorder>
    <zorder>label_11</zorder>
    <zorder>comboBoxAudioDevsRemote</zorder>
+   <zorder>lineEditRemote</zorder>
+   <zorder>lineEditLocal</zorder>
   </widget>
  </widget>
  <layoutdefault spacing="6" margin="11"/>

@@ -49,6 +49,7 @@ public:
       void sendToOwner(AVPacket*);
       StreamInfo info();
       int getIndex();
+      AVCodecContext* getCodec();
    private:
       MediaType type;
       union {
@@ -87,6 +88,7 @@ public:
       AVCodecContext* codec;
       QList<Output::Stream*> subscribers;
       Input* owner;
+      int64_t pts;
    };
 
    virtual ~Input();
