@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>631</width>
+    <width>627</width>
     <height>240</height>
    </rect>
   </property>
@@ -86,7 +86,7 @@ radius: 1.35, stop: 0 #fff, stop: 1 #ccc);
 }</string>
   </property>
   <widget class="QWidget" name="centralWidget">
-   <widget class="Player" name="playerLocal">
+   <widget class="Player" name="playerLocal" native="true">
     <property name="geometry">
      <rect>
       <x>300</x>
@@ -96,7 +96,7 @@ radius: 1.35, stop: 0 #fff, stop: 1 #ccc);
      </rect>
     </property>
    </widget>
-   <widget class="Player" name="playerRemote">
+   <widget class="Player" name="playerRemote" native="true">
     <property name="geometry">
      <rect>
       <x>0</x>
@@ -106,33 +106,10 @@ radius: 1.35, stop: 0 #fff, stop: 1 #ccc);
      </rect>
     </property>
    </widget>
-   <widget class="QListWidget" name="listContacts">
-    <property name="geometry">
-     <rect>
-      <x>422</x>
-      <y>21</y>
-      <width>201</width>
-      <height>181</height>
-     </rect>
-    </property>
-   </widget>
-   <widget class="QLabel" name="label_6">
-    <property name="geometry">
-     <rect>
-      <x>422</x>
-      <y>0</y>
-      <width>81</width>
-      <height>20</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Contact list</string>
-    </property>
-   </widget>
    <widget class="QPushButton" name="buttonCall">
     <property name="geometry">
      <rect>
-      <x>421</x>
+      <x>420</x>
       <y>210</y>
       <width>101</width>
       <height>21</height>
@@ -165,7 +142,7 @@ radius: 1.35, stop: 0 #fff, stop: 1 #ccc);
      </rect>
     </property>
     <property name="text">
-     <string>Video device</string>
+     <string>Local video</string>
     </property>
    </widget>
    <widget class="QComboBox" name="comboBoxVideoDevs">
@@ -177,16 +154,6 @@ radius: 1.35, stop: 0 #fff, stop: 1 #ccc);
       <height>21</height>
      </rect>
     </property>
-    <item>
-     <property name="text">
-      <string>WebCam SCN-1900N</string>
-     </property>
-    </item>
-    <item>
-     <property name="text">
-      <string>File</string>
-     </property>
-    </item>
    </widget>
    <widget class="QLabel" name="label_9">
     <property name="geometry">
@@ -198,7 +165,7 @@ radius: 1.35, stop: 0 #fff, stop: 1 #ccc);
      </rect>
     </property>
     <property name="text">
-     <string>Audio device</string>
+     <string>Local audio</string>
     </property>
    </widget>
    <widget class="QComboBox" name="comboBoxAudioDevs">
@@ -210,15 +177,75 @@ radius: 1.35, stop: 0 #fff, stop: 1 #ccc);
       <height>21</height>
      </rect>
     </property>
-    <item>
-     <property name="text">
-      <string>HDA Intel(Microphone)</string>
-     </property>
-    </item>
    </widget>
+   <widget class="QLabel" name="label_10">
+    <property name="geometry">
+     <rect>
+      <x>430</x>
+      <y>0</y>
+      <width>81</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Remote video</string>
+    </property>
+   </widget>
+   <widget class="QComboBox" name="comboBoxAudioDevsRemote">
+    <property name="geometry">
+     <rect>
+      <x>430</x>
+      <y>70</y>
+      <width>107</width>
+      <height>21</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QComboBox" name="comboBoxVideoDevsRemote">
+    <property name="geometry">
+     <rect>
+      <x>430</x>
+      <y>20</y>
+      <width>107</width>
+      <height>21</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_11">
+    <property name="geometry">
+     <rect>
+      <x>430</x>
+      <y>50</y>
+      <width>81</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Remote audio audio</string>
+    </property>
+   </widget>
+   <zorder>playerLocal</zorder>
+   <zorder>playerRemote</zorder>
+   <zorder>buttonCall</zorder>
+   <zorder>buttonSendFile</zorder>
+   <zorder>label_8</zorder>
+   <zorder>comboBoxVideoDevs</zorder>
+   <zorder>label_9</zorder>
+   <zorder>comboBoxAudioDevs</zorder>
+   <zorder>label_10</zorder>
+   <zorder>comboBoxVideoDevsRemote</zorder>
+   <zorder>label_11</zorder>
+   <zorder>comboBoxAudioDevsRemote</zorder>
   </widget>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
+ <customwidgets>
+  <customwidget>
+   <class>Player</class>
+   <extends>QWidget</extends>
+   <header>player.h</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

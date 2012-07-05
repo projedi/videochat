@@ -13,5 +13,6 @@ public:
 protected:
    void paintEvent(QPaintEvent*);
 private:
-   QImage image;
+   AVPacket* pkt;
+   QMutex m;
 };

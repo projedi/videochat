@@ -1,10 +1,17 @@
 #include "ffmpeg.h"
 #include <QtConcurrentRun>
 
+#include <iostream>
+using namespace std;
+
 Input::Stream::Stream(MediaType type, AVCodecContext* codec, Input* owner) {
    this->type = type;
    this->codec = codec;
    this->owner = owner;
+   if(type != Other) {
+      AVCodec* decoder = avcodec_find_decoder(codec->codec_id);
+      avcodec_open2(codec,decoder,0);
+   }
 }
 
 Input::Stream::~Stream() { avcodec_close(codec); av_free(codec); }
@@ -14,7 +21,6 @@ AVFrame* Input::Stream::decode(AVPacket* pkt) {
       int got_picture;
       AVFrame* frame = avcodec_alloc_frame();
       if(avcodec_decode_video2(codec,frame,&got_picture,pkt) < 0) return 0;
-      av_free_packet(pkt);
       if(!got_picture) { av_free(frame); return 0; }
       frame->pts = av_frame_get_best_effort_timestamp(frame);
       return frame;
@@ -27,8 +33,12 @@ AVFrame* Input::Stream::decode(AVPacket* pkt) {
 void Input::Stream::broadcast(AVFrame* frame) {
    if(!frame) return;
    QList<Output::Stream*>::iterator i;
-   for(i = subscribers.begin(); i != subscribers.end(); i++)
-      (*i)->sendToOwner((*i)->encode(frame));
+   for(int i = 0; i < subscribers.count(); i++) {
+      Output::Stream* subs = subscribers[i];
+      AVPacket* pkt = subs->encode(frame);
+      subs->sendToOwner(pkt);
+      //av_free_packet(pkt);
+   }
 }
 
 void Input::Stream::subscribe(Output::Stream* client) { subscribers.append(client); }
@@ -67,6 +77,7 @@ QList<Input::Stream*> Input::getStreams() const { return streams; }
 Input::State Input::getState() { return state; }
 
 void Input::setState(Input::State state) {
+   QMutexLocker l(&m);
    if(state == this->state) return;
    this->state = state;
    if(state == Playing) workerFuture = QtConcurrent::run(this,&Input::worker);
@@ -101,8 +112,11 @@ void InputGeneric::worker() {
    //TODO: If lots of errors, then what?
    while(state != Paused) {
       AVPacket* pkt = new AVPacket();
+      av_init_packet(pkt);
       if(av_read_frame(format,pkt) < 0) continue;
       Stream* stream = streams[pkt->stream_index];
-      stream->broadcast(stream->decode(pkt));
+      AVFrame* frame = stream->decode(pkt);
+      av_free_packet(pkt);
+      stream->broadcast(frame);
    }
 }

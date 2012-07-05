@@ -1,4 +1,6 @@
 #include "ffmpeg.h"
+#include <iostream>
+using namespace std;
 
 Output::Stream::Stream(StreamInfo info,AVCodec** encoder,Output* owner,int index) throw(int) {
    this->owner = owner;
@@ -15,19 +17,22 @@ Output::Stream::Stream(StreamInfo info,AVCodec** encoder,Output* owner,int index
       codec->codec_id = (*encoder)->id;
       codec->bit_rate = info.bitrate;
       if(type == Video) {
-         codec->pix_fmt = (*encoder)->pix_fmts[0];
+         //TODO: increase sanity
+         if((*encoder)->id == CODEC_ID_RAWVIDEO) codec->pix_fmt = PIX_FMT_RGB32;
+         else codec->pix_fmt = (*encoder)->pix_fmts[0];
          codec->width = info.video.width;
          codec->height = info.video.height;
          codec->time_base.num = 1;
          codec->time_base.den = info.video.fps;
          codec->gop_size = 13;
+         //TODO: Oh, C++, you can't do that yourself.
+         scaler = 0;
       } else {
          codec->sample_fmt = (*encoder)->sample_fmts[0];
          codec->sample_rate = info.audio.sampleRate;
          codec->channel_layout = info.audio.channelLayout;
       }
-      if(avcodec_open2(codec,*encoder,0)<0)
-         throw 1;
+      if(avcodec_open2(codec,*encoder,0)<0) throw 1;
    }
 }
 
@@ -40,8 +45,9 @@ Output::Stream::~Stream() {
 AVPacket* Output::Stream::encode(AVFrame* frame) {
    if(!(type == Video || type == Audio)) return 0;
    AVFrame* newFrame = avcodec_alloc_frame();
-   AVPacket* pkt = new AVPacket;
+   AVPacket* pkt = new AVPacket();
    av_init_packet(pkt);
+   pkt->size = 0;
    int got_packet, res = 0;
    if(type == Video) {
       scaler = sws_getCachedContext( scaler, frame->width, frame->height
@@ -52,14 +58,17 @@ AVPacket* Output::Stream::encode(AVFrame* frame) {
                      , frame->height);
       sws_scale( scaler, frame->data, frame->linesize, 0, frame->height
                , newFrame->data, newFrame->linesize);
+      newFrame->width=codec->width;
+      newFrame->height=codec->height;
+      newFrame->pts=frame->pts;
       av_free(frame);
       res = avcodec_encode_video2(codec, pkt, newFrame, &got_packet);
    } else if(type == Audio) {
       //TODO: Implement
    }
-   if(res < 0) pkt = 0;
+   if(res < 0) { cout << "Couldn't encode" << endl; pkt = 0; }
    if(!res) {
-      if(!got_packet) { av_free_packet(pkt); pkt = 0; }
+      if(!got_packet) { cout << "Didn't get packet" << endl; av_free_packet(pkt); pkt = 0; }
       pkt->stream_index = index;
       if(codec->coded_frame->key_frame) pkt->flags|=AV_PKT_FLAG_KEY;
    }
@@ -68,7 +77,10 @@ AVPacket* Output::Stream::encode(AVFrame* frame) {
    return pkt;
 }
 
-void Output::Stream::sendToOwner(AVPacket* pkt) { if(!pkt) owner->sendPacket(pkt); }
+void Output::Stream::sendToOwner(AVPacket* pkt) {
+   if(!pkt) cout << "zero packet" << endl;
+   else owner->sendPacket(pkt);
+}
 
 StreamInfo Output::Stream::info() {
    StreamInfo info;
@@ -127,6 +139,6 @@ void OutputGeneric::sendPacket(AVPacket* pkt) {
       pkt->dts = av_rescale_q(pkt->dts, vCodec->time_base, vStream->time_base);
    }
    */
-   av_interleaved_write_frame(format,pkt);
-   av_free_packet(pkt);
+   //av_interleaved_write_frame(format,pkt);
+   //av_free_packet(pkt);
 }

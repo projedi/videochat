@@ -17,6 +17,7 @@ private slots:
    void on_buttonSendFile_clicked();
 private:
    Ui::MainWindow *ui;
-   Input *camera, *client;
+   VideoHardware *camera;
+   Input *client;
    Output* server;
 };

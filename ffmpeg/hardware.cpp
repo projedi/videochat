@@ -1,5 +1,8 @@
 #include "ffmpeg.h"
 
+#include <iostream>
+using namespace std;
+
 //TODO: implement
 AudioHardware::AudioHardware() {
 #if defined(LINUX)
@@ -47,7 +50,21 @@ VideoHardware::VideoHardware() {
 
 VideoHardware::~VideoHardware() { }
 
+QList<QString> VideoHardware::getDevices() {
+   QList<QString> out;
+   QList< QPair<QString,QString> >::iterator i;
+   for(i = cameras.begin(); i != cameras.end(); i++)
+      out.append((*i).second);
+   return out;
+}
+
+//TODO: fire up only currently up devices
 void VideoHardware::worker() {
+   QList<Input*>::iterator i;
+   for(i=inputs.begin();i!=inputs.end();i++) {
+      (*i)->setState(Playing);
+   }
+   /*
    QList<Stream*>::iterator i;
    while(state != Paused) {
       for(i=streams.begin();i!=streams.end();i++) {
@@ -55,4 +72,5 @@ void VideoHardware::worker() {
          else (*i)->getOwner()->setState(Paused);
       }
    }
+   */
 }

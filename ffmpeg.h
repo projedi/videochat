@@ -9,7 +9,7 @@ extern "C" {
    //#include <libavutil/opt.h>
 }
 
-//#include <QMutexLocker>
+#include <QMutexLocker>
 #include <QFuture>
 
 //#include <iostream>
@@ -94,6 +94,7 @@ public:
    State getState();
    void setState(State state);
 protected:
+   QMutex m;
    State state;
    QList<Stream*> streams;
    QFuture<void> workerFuture;
@@ -137,6 +138,7 @@ public:
    //Gets all cameras on computer, platform dependent
    VideoHardware();
    ~VideoHardware();
+   QList<QString> getDevices();
 private:
    QList< QPair<QString,QString> > cameras;
    QList<Input*> inputs;
