@@ -28,8 +28,9 @@ Output::Stream::Stream(StreamInfo info,AVCodec** encoder,Output* owner,int index
          codec->time_base.den = info.video.fps;
          codec->gop_size = 13;
          if(codec->codec_id == CODEC_ID_H264) {
-            av_dict_set(&dic,"profile","baseline",0);
-            av_dict_set(&dic,"level","13",0);
+            //av_dict_set(&dic,"profile","baseline",0);
+            //av_dict_set(&dic,"level","13",0);
+            codec->bit_rate = 160000;
             codec->pix_fmt = PIX_FMT_YUV420P;
          }
          //Oh, C++, you can't do that yourself.
@@ -75,7 +76,7 @@ AVPacket* Output::Stream::encode(AVFrame* frame) {
    }
    if(res < 0) { cout << "Couldn't encode" << endl; pkt = 0; }
    if(!res) {
-      if(!got_packet) { cout << "Didn't get packet" << endl; av_free_packet(pkt); pkt = 0; }
+      if(!got_packet) { av_free_packet(pkt); pkt = 0; }
       else {
          pkt->stream_index = index;
          if(codec->coded_frame->key_frame) pkt->flags|=AV_PKT_FLAG_KEY;
@@ -87,8 +88,7 @@ AVPacket* Output::Stream::encode(AVFrame* frame) {
 }
 
 void Output::Stream::sendToOwner(AVPacket* pkt) {
-   if(!pkt) cout << "zero packet" << endl;
-   else owner->sendPacket(pkt);
+   if(pkt) owner->sendPacket(pkt);
 }
 
 StreamInfo Output::Stream::info() {
