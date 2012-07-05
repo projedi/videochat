@@ -48,6 +48,7 @@ VideoHardware::VideoHardware() {
       inputs.append(input);
       streams.append(input->getStreams());
    }
+   state = Paused;
 }
 
 VideoHardware::~VideoHardware() { }

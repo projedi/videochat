@@ -22,16 +22,19 @@ void MainWindow::on_buttonCall_clicked() {
    camera->setState(Input::Playing);
    QList<Input::Stream*> cameraStreams = camera->getStreams();
    Input::Stream* curStream = cameraStreams[ui->comboBoxVideoDevs->currentIndex()];
+
    server = new OutputGeneric("mpegts",ui->lineEditLocal->text());
    Output::Stream* serverStream = server->addStream(curStream->info());
    curStream->subscribe(serverStream);
-   client = new InputGeneric("mpegts",ui->lineEditRemote->text());
-   Input::Stream* clientStream = client->getStreams()[0];
+
+   //client = new InputGeneric("mpegts",ui->lineEditRemote->text());
+   //Input::Stream* clientStream = client->getStreams()[0];
    
    Output::Stream* playerStream = ui->playerLocal->addStream(curStream->info());
    curStream->subscribe(playerStream);
-   Output::Stream* playerRemoteStream = ui->playerRemote->addStream(curStream->info());
-   clientStream->subscribe(playerRemoteStream);
+   
+   //Output::Stream* playerRemoteStream = ui->playerRemote->addStream(clientStream->info());
+   //clientStream->subscribe(playerRemoteStream);
 }
 
 void MainWindow::on_buttonSendFile_clicked() {
