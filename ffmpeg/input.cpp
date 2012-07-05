@@ -116,7 +116,7 @@ void InputGeneric::worker() {
       if(av_read_frame(format,pkt) < 0) continue;
       Stream* stream = streams[pkt->stream_index];
       AVFrame* frame = stream->decode(pkt);
-      av_free_packet(pkt);
       stream->broadcast(frame);
+      av_free_packet(pkt);
    }
 }

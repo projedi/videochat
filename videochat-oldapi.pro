@@ -5,7 +5,9 @@
 #-------------------------------------------------
 
 QT       += core gui
-LIBS += -lavcodec -lavformat -lavdevice -lswscale -lavutil -lswresample -lx264
+win32: LIBS += -L$$PWD/3rd-party/lib -lavcodec -lavformat -lavdevice -lswscale -lavutil -lswresample
+win32: INCLUDEPATH += $$PWD/3rd-party/include
+unix: LIBS += -lavcodec -lavformat -lavdevice -lswscale -lavutil -lswresample -lx264
 QMAKE_CXXFLAGS = -D__STDC_CONSTANT_MACROS
 unix: DEFINES += LINUX
 win32: DEFINES += WIN32

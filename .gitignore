@@ -4,4 +4,7 @@
 videochat-oldapi
 ui_mainwindow.h
 moc_*.cpp
-Makefile
+Makefile*
+3rd-party/
+debug/
+release/
