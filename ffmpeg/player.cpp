@@ -12,7 +12,6 @@ Output::Stream* Player::addStream(StreamInfo info) {
    AVCodec* encoder = avcodec_find_encoder(CODEC_ID_RAWVIDEO);
    info.video.width = this->width();
    info.video.height = this->height();
-   info.bitrate = 32*this->width()*this->height()*info.video.fps;
    Stream* stream = new Stream(info,&encoder,this,0);
    streams.append(stream);
    return stream;

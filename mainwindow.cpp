@@ -27,14 +27,15 @@ void MainWindow::on_buttonCall_clicked() {
    Output::Stream* serverStream = server->addStream(curStream->info());
    curStream->subscribe(serverStream);
 
-   //client = new InputGeneric("mpegts",ui->lineEditRemote->text());
-   //Input::Stream* clientStream = client->getStreams()[0];
+   client = new InputGeneric("mpegts",ui->lineEditRemote->text());
+   Input::Stream* clientStream = client->getStreams()[0];
+   client->setState(Input::Playing);
    
    Output::Stream* playerStream = ui->playerLocal->addStream(curStream->info());
    curStream->subscribe(playerStream);
    
-   //Output::Stream* playerRemoteStream = ui->playerRemote->addStream(clientStream->info());
-   //clientStream->subscribe(playerRemoteStream);
+   Output::Stream* playerRemoteStream = ui->playerRemote->addStream(clientStream->info());
+   clientStream->subscribe(playerRemoteStream);
 }
 
 void MainWindow::on_buttonSendFile_clicked() {

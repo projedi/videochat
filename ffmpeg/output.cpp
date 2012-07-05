@@ -26,7 +26,7 @@ Output::Stream::Stream(StreamInfo info,AVCodec** encoder,Output* owner,int index
          codec->time_base.num = 1;
          codec->time_base.den = info.video.fps;
          codec->gop_size = 13;
-         //TODO: Oh, C++, you can't do that yourself.
+         //Oh, C++, you can't do that yourself.
          scaler = 0;
       } else {
          codec->sample_fmt = (*encoder)->sample_fmts[0];
@@ -55,8 +55,7 @@ AVPacket* Output::Stream::encode(AVFrame* frame) {
                                    , (PixelFormat)frame->format
                                    , codec->width, codec->height, codec->pix_fmt
                                    , SWS_BICUBIC, 0, 0, 0);
-      avpicture_alloc( (AVPicture*)newFrame, (PixelFormat)frame->format, frame->width
-                     , frame->height);
+      avpicture_alloc( (AVPicture*)newFrame, codec->pix_fmt, codec->width, codec->height);
       sws_scale( scaler, frame->data, frame->linesize, 0, frame->height
                , newFrame->data, newFrame->linesize);
       newFrame->width=codec->width;
