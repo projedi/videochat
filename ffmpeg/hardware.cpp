@@ -39,6 +39,8 @@ VideoHardware::VideoHardware() {
    cameras.append(device);
 #elif defined(WIN32)
    QString fmt = "dshow";
+   QPair<QString,QString> device = QPair<QString,QString>("video=Venus USB2.0 Camera","Default webcam");
+   cameras.append(device);
 #endif
    QList< QPair<QString,QString> >::iterator i;
    for(i=cameras.begin();i!=cameras.end();i++) {
