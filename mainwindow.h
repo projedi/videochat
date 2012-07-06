@@ -3,9 +3,7 @@
 #include <QMainWindow>
 #include "ffmpeg.h"
 
-namespace Ui {
-class MainWindow;
-}
+namespace Ui { class MainWindow; }
 
 class MainWindow: public QMainWindow {
    Q_OBJECT
@@ -15,7 +13,8 @@ public:
 private slots:
    void on_buttonCall_clicked();
    void on_buttonExit_clicked();
-
+   void handleCall();
 private:
    Ui::MainWindow *ui;
+   QTcpServer server;
 };
