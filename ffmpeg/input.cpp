@@ -91,16 +91,17 @@ InputGeneric::InputGeneric(QString fmt, QString file) {
    QByteArray fileName = file.toAscii();
    format = avformat_alloc_context();
    avformat_open_input(&format,fileName.data(),av_find_input_format(formatName.data()),0);
-   avformat_find_stream_info(format,0);
+   //in win32 it must be commented for some reason
+   //avformat_find_stream_info(format,0);
    for(int i = 0; i < format->nb_streams; i++) {
       AVStream* avstream = format->streams[i];
       Stream* stream;
       if(avstream->codec->codec_type == AVMEDIA_TYPE_VIDEO) {
          stream = new Stream(Video,avstream->codec,this);
-         streams.append(stream); 
+         streams.append(stream);
       } else if(avstream->codec->codec_type == AVMEDIA_TYPE_AUDIO) {
          stream = new Stream(Audio,avstream->codec,this);
-         streams.append(stream); 
+         streams.append(stream);
       } else {
          stream = new Stream(Other,0,this);
          streams.append(stream);

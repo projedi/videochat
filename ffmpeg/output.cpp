@@ -20,7 +20,7 @@ Output::Stream::Stream(StreamInfo info,AVCodec** encoder,Output* owner,int index
          AVDictionary *dic = 0;
       if(type == Video) {
          //TODO: increase sanity
-         if((*encoder)->id == CODEC_ID_RAWVIDEO) codec->pix_fmt = PIX_FMT_RGB32;
+         if(codec->codec_id == CODEC_ID_RAWVIDEO) codec->pix_fmt = PIX_FMT_RGB32;
          else codec->pix_fmt = (*encoder)->pix_fmts[0];
          codec->width = info.video.width;
          codec->height = info.video.height;
@@ -30,8 +30,8 @@ Output::Stream::Stream(StreamInfo info,AVCodec** encoder,Output* owner,int index
          if(codec->codec_id == CODEC_ID_H264) {
             //av_dict_set(&dic,"profile","baseline",0);
             //av_dict_set(&dic,"level","13",0);
-            codec->bit_rate = 160000;
-            codec->pix_fmt = PIX_FMT_YUV420P;
+            //codec->bit_rate = 160000;
+            //codec->pix_fmt = PIX_FMT_YUV420P;
          }
          //Oh, C++, you can't do that yourself.
          scaler = 0;
@@ -145,10 +145,9 @@ Output::Stream* OutputGeneric::addStream(StreamInfo info) {
 
 void OutputGeneric::sendPacket(AVPacket* pkt) {
    //cout << "On out: pts=" << pkt->pts << ";dts=" << pkt->dts << endl;
-   pkt->pts = av_rescale_q(pkt->pts,streams[pkt->stream_index]->getCodec()->time_base
-                         ,format->streams[pkt->stream_index]->time_base);
-   pkt->dts = av_rescale_q(pkt->dts,streams[pkt->stream_index]->getCodec()->time_base
-                         ,format->streams[pkt->stream_index]->time_base);
    av_interleaved_write_frame(format,pkt);
+   //if(pkt->flags & AV_PKT_FLAG_KEY)
+   // avformat_write_header(format,0);
+   //av_write_frame(format,pkt);
    av_free_packet(pkt);
 }
