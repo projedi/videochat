@@ -1,6 +1,8 @@
 #include "callrequest.h"
 #include "ui_callrequest.h"
 #include <QHostAddress>
+#include <iostream>
+using namespace std;
 
 CallRequest::CallRequest(QString contactName, QWidget *parent): QDialog(parent)
                                                               , ui(new Ui::CallRequest) {
@@ -13,7 +15,7 @@ CallRequest::CallRequest(QString contactName, QWidget *parent): QDialog(parent)
 }
 
 CallRequest::~CallRequest() {
-   socket->disconnectFromHost();
+   delete socket;
    delete ui;
 }
 
@@ -23,16 +25,23 @@ QString CallRequest::getRemoteURI() { return remoteURI; }
 void CallRequest::discuss() {
    char buffer[50];
    socket->write("VIDEOCHAT",9);
+   cout << "wrote conversation starter" << endl;
    if(!socket->waitForReadyRead()) reject();
-   socket->read(buffer,50);
+   cout << "read some data" << endl;
+   int len = socket->read(buffer,50);
+   buffer[len] = 0;
    QString reply(buffer);
-   delete buffer;
+   cout << "this is the data I read: " << buffer << endl;
    if(reply.startsWith("ACCEPT")) {
       reply.remove(0,7);
+      cout << "extracting port: " << reply.toAscii().data() << endl;
+      cout << "wrote my port" << endl;
       socket->write("8081",4);
+      socket->flush();
       QString localPort = "8081";
       remoteURI = "udp://" + socket->peerAddress().toString() + ":" + reply;
       localURI = "udp://" + socket->localAddress().toString() + ":" + localPort;
+      socket->disconnectFromHost();
       accept();  
    } else reject();
 }

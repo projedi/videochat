@@ -11,6 +11,7 @@ MainWindow::MainWindow(QWidget *parent): QMainWindow(parent), ui(new Ui::MainWin
    ui->setupUi(this);
    connect(&server,SIGNAL(newConnection()),SLOT(handleCall()));
    server.listen(QHostAddress::Any,8000);
+   ui->contactList->setCurrentRow(0);
 }
 
 MainWindow::~MainWindow() {
@@ -23,6 +24,7 @@ void MainWindow::on_buttonCall_clicked() {
    CallRequest req(contact,this);
    int result = req.exec();
    if(result == (int)QDialog::Accepted) {
+      cout << "Starting the show" << endl;
       CallScreen call(contact,req.getRemoteURI(),req.getLocalURI(),this);
       call.exec();
    }
