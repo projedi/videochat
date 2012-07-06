@@ -8,3 +8,5 @@ Makefile*
 3rd-party/
 debug/
 release/
+*.Debug
+*.Release

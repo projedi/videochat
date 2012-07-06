@@ -1,6 +1,8 @@
 #include "callresponse.h"
 #include "ui_callresponse.h"
 #include <QHostAddress>
+#include <iostream>
+using namespace std;
 
 CallResponse::CallResponse( QAbstractSocket* socket, QWidget *parent)
                           : QDialog(parent), ui(new Ui::CallResponse) {
@@ -21,10 +23,12 @@ void CallResponse::on_buttonAccept_clicked() {
    char buffer[51];
    int len;
    QString localPort = "8080";
+   cout << "Wrote acceptance" << endl;
    socket->write("ACCEPT 8080",11);
    if(!socket->waitForReadyRead()) reject();
    len = socket->read(buffer,50);
    buffer[len] = 0;
+   cout << "read data " << len << " long: " << buffer << endl;
    QString remotePort(buffer);
    localURI = "udp://" + socket->localAddress().toString() + ":" + localPort;
    remoteURI = "udp://" + socket->peerAddress().toString() + ":" + remotePort;

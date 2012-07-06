@@ -35,12 +35,16 @@ void MainWindow::on_buttonExit_clicked() {
 }
 
 void MainWindow::handleCall() {
+    cout << "Someone called me" << endl;
    QAbstractSocket* socket = server.nextPendingConnection();
-   char buffer[10];
+   char buffer[100];
    int len;
-   len = socket->read(buffer,9);
+   if(!socket->waitForReadyRead()) return;
+   len = socket->read(buffer,99);
+   cout << "it is " << len << " long" << endl;
    buffer[len] = 0;
    QString init(buffer);
+   cout << "This is what i read: " << buffer << endl;
    if(init != "VIDEOCHAT") {
       socket->close();
       return;
@@ -48,6 +52,7 @@ void MainWindow::handleCall() {
    CallResponse resp(socket,this);
    int result = resp.exec();
    if(result == (int)QDialog::Accepted) {
+       cout << "Starting the show";
       CallScreen call(resp.getRemoteURI(),resp.getRemoteURI(),resp.getLocalURI(),this);
       call.exec();
    }
