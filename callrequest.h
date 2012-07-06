@@ -1,25 +1,22 @@
-#ifndef CALLREQUEST_H
-#define CALLREQUEST_H
+#pragma once
 
 #include <QDialog>
+#include <QTcpSocket>
 
-namespace Ui {
-class CallRequest;
-}
+namespace Ui { class CallRequest; }
 
-class CallRequest : public QDialog
-{
-    Q_OBJECT
-    
+class CallRequest : public QDialog {
+Q_OBJECT
 public:
-    explicit CallRequest(QString contactName, QWidget *parent = 0);
-    ~CallRequest();
-    
+   explicit CallRequest(QString contactName, QWidget *parent = 0);
+   ~CallRequest();
+   QString getLocalURI();
+   QString getRemoteURI();
 private slots:
-    void on_buttonAbort_clicked();
-
+   void discuss();
 private:
-    Ui::CallRequest *ui;
+   QAbstractSocket socket;
+   QString localURI;
+   QString remoteURI;
+   Ui::CallRequest *ui;
 };
-
-#endif // CALLREQUEST_H
