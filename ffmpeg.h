@@ -124,31 +124,26 @@ private:
    AVFormatContext* format;
 };
 
-class AudioHardware: public Input {
+class Hardware {
 public:
-   //Gets all microphones on computer, platform dependent
-   AudioHardware();
-   ~AudioHardware();
+   virtual ~Hardware();
+   QList<QString> getNames() const;
+   QList<QString> getFormats() const;
+   QList<QString> getFiles() const;
 private:
-   QList< QPair<QString,QString> > microphones;
-   QList<Input*> inputs;
-   void worker();
+   void enumerateCameras();
+   void enumerateMicrophones();
+   QList<QString> names;
+   QList<QString> formats;
+   QList<QString> files;
 };
 
-class VideoHardware: public Input {
+class VideoHardware: public Hardware {
 public:
-   //Gets all cameras on computer, platform dependent
    VideoHardware();
-   ~VideoHardware();
-   QList<QString> getDevices();
-private:
-   QList< QPair<QString,QString> > cameras;
-   QList<Input*> inputs;
-   void worker();
 };
 
-// Not to clutter includes for users
-//#include "ffmpeg/alsav4l2.h"
-//#include "ffmpeg/client.h"
-//#include "ffmpeg/player.h"
-//#include "ffmpeg/server.h"
+class AudioHardware: public Hardware {
+public:
+   AudioHardware();
+};
