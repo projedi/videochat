@@ -12,9 +12,9 @@ class CallResponse : public QDialog
     Q_OBJECT
     
 public:
-    explicit CallResponse(QWidget *parent = 0);
+    explicit CallResponse(QString contactName, QWidget *parent = 0);
     ~CallResponse();
-    
+
 private:
     Ui::CallResponse *ui;
 };

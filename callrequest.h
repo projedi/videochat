@@ -12,9 +12,12 @@ class CallRequest : public QDialog
     Q_OBJECT
     
 public:
-    explicit CallRequest(QWidget *parent = 0);
+    explicit CallRequest(QString contactName, QWidget *parent = 0);
     ~CallRequest();
     
+private slots:
+    void on_buttonAbort_clicked();
+
 private:
     Ui::CallRequest *ui;
 };

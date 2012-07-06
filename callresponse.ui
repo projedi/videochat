@@ -98,7 +98,7 @@ radius: 1.35, stop: 0 #fff, stop: 1 #ccc);
     <string>Call request from</string>
    </property>
   </widget>
-  <widget class="QLabel" name="label_2">
+  <widget class="QLabel" name="labelContact">
    <property name="geometry">
     <rect>
      <x>130</x>
@@ -111,7 +111,7 @@ radius: 1.35, stop: 0 #fff, stop: 1 #ccc);
     <string/>
    </property>
   </widget>
-  <widget class="QPushButton" name="pushButton">
+  <widget class="QPushButton" name="buttonAccept">
    <property name="geometry">
     <rect>
      <x>10</x>
@@ -124,7 +124,7 @@ radius: 1.35, stop: 0 #fff, stop: 1 #ccc);
     <string>Accept</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="pushButton_2">
+  <widget class="QPushButton" name="buttonDecline">
    <property name="geometry">
     <rect>
      <x>160</x>

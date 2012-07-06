@@ -15,6 +15,9 @@ public:
     explicit CallScreen(QWidget *parent = 0);
     ~CallScreen();
     
+private slots:
+    void on_buttonEndCall_clicked();
+
 private:
     Ui::CallScreen *ui;
 };

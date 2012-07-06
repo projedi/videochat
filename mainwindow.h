@@ -14,10 +14,8 @@ public:
    ~MainWindow();
 private slots:
    void on_buttonCall_clicked();
-   void on_buttonSendFile_clicked();
+   void on_buttonExit_clicked();
+
 private:
    Ui::MainWindow *ui;
-   VideoHardware *camera;
-   Input *client;
-   Output* server;
 };

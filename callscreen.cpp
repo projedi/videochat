@@ -12,3 +12,8 @@ CallScreen::~CallScreen()
 {
     delete ui;
 }
+
+void CallScreen::on_buttonEndCall_clicked()
+{
+    this->close();
+}
