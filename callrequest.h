@@ -15,7 +15,7 @@ public:
 private slots:
    void discuss();
 private:
-   QAbstractSocket socket;
+   QAbstractSocket* socket;
    QString localURI;
    QString remoteURI;
    Ui::CallRequest *ui;

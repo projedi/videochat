@@ -118,7 +118,7 @@ radius: 1.35, stop: 0 #fff, stop: 1 #ccc);
     <string>End call</string>
    </property>
   </widget>
-  <widget class="QComboBox" name="comboWebcam">
+  <widget class="QComboBox" name="comboCamera">
    <property name="geometry">
     <rect>
      <x>470</x>

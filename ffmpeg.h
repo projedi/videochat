@@ -130,9 +130,7 @@ public:
    QList<QString> getNames() const;
    QList<QString> getFormats() const;
    QList<QString> getFiles() const;
-private:
-   void enumerateCameras();
-   void enumerateMicrophones();
+protected:
    QList<QString> names;
    QList<QString> formats;
    QList<QString> files;

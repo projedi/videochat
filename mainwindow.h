@@ -1,7 +1,7 @@
 #pragma once
 
 #include <QMainWindow>
-#include "ffmpeg.h"
+#include <QTcpServer>
 
 namespace Ui { class MainWindow; }
 

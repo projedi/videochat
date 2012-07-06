@@ -9,7 +9,7 @@ using namespace std;
 
 MainWindow::MainWindow(QWidget *parent): QMainWindow(parent), ui(new Ui::MainWindow) {
    ui->setupUi(this);
-   connect(server,SIGNAL(newConnection()),SLOT(handleCall()));
+   connect(&server,SIGNAL(newConnection()),SLOT(handleCall()));
    server.listen(QHostAddress::Any,8000);
 }
 
@@ -33,9 +33,9 @@ void MainWindow::on_buttonExit_clicked() {
 }
 
 void MainWindow::handleCall() {
-   QAbstractSocket* socket = server->nextPendingConnection();
+   QAbstractSocket* socket = server.nextPendingConnection();
    char buffer[10];
-   int len
+   int len;
    len = socket->read(buffer,9);
    buffer[len] = 0;
    QString init(buffer);
@@ -46,7 +46,7 @@ void MainWindow::handleCall() {
    CallResponse resp(socket,this);
    int result = resp.exec();
    if(result == (int)QDialog::Accepted) {
-      CallScreen call(contact,resp.getRemoteURI(),resp.getLocalURI(),this);
+      CallScreen call(resp.getRemoteURI(),resp.getRemoteURI(),resp.getLocalURI(),this);
       call.exec();
    }
 }

@@ -1,10 +1,11 @@
 #include "callresponse.h"
 #include "ui_callresponse.h"
+#include <QHostAddress>
 
 CallResponse::CallResponse( QAbstractSocket* socket, QWidget *parent)
                           : QDialog(parent), ui(new Ui::CallResponse) {
    ui->setupUi(this);
-   ui->labelContact->setText(socket.peerName());
+   ui->labelContact->setText(socket->peerName());
    this->socket = socket;
 }
 
@@ -13,14 +14,14 @@ CallResponse::~CallResponse() {
    delete ui;
 }
 
-QString getLocalURI() { return localURI; }
-QString getRemoteURI() { return remoteURI; }
+QString CallResponse::getLocalURI() { return localURI; }
+QString CallResponse::getRemoteURI() { return remoteURI; }
 
 void CallResponse::on_buttonAccept_clicked() {
    char buffer[51];
    int len;
    QString localPort = "8080";
-   socket->writeData("ACCEPT 8080",11);
+   socket->write("ACCEPT 8080",11);
    if(!socket->waitForReadyRead()) reject();
    len = socket->read(buffer,50);
    buffer[len] = 0;
@@ -31,6 +32,6 @@ void CallResponse::on_buttonAccept_clicked() {
 }
 
 void CallResponse::on_buttonDecline_clicked() {
-   socket->writeData("DECLINE",7);
+   socket->write("DECLINE",7);
    reject();
 }
