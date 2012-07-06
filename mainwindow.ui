@@ -227,14 +227,14 @@ radius: 1.35, stop: 0 #fff, stop: 1 #ccc);
    <widget class="QLineEdit" name="lineEditRemote">
     <property name="geometry">
      <rect>
-      <x>310</x>
-      <y>120</y>
+      <x>430</x>
+      <y>100</y>
       <width>113</width>
       <height>20</height>
      </rect>
     </property>
     <property name="text">
-     <string>udp://192.168.0.1:8080</string>
+     <string>udp://127.0.0.1:8080</string>
     </property>
    </widget>
    <widget class="QLineEdit" name="lineEditLocal">
@@ -247,7 +247,7 @@ radius: 1.35, stop: 0 #fff, stop: 1 #ccc);
      </rect>
     </property>
     <property name="text">
-     <string>udp://127.0.0.1:8080</string>
+     <string>udp://192.168.0.1:8080</string>
     </property>
    </widget>
    <zorder>playerLocal</zorder>
