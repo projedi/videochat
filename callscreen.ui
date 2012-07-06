@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>572</width>
+    <width>636</width>
     <height>421</height>
    </rect>
   </property>
@@ -100,22 +100,68 @@ radius: 1.35, stop: 0 #fff, stop: 1 #ccc);
     <rect>
      <x>470</x>
      <y>10</y>
-     <width>91</width>
-     <height>61</height>
+     <width>151</width>
+     <height>111</height>
     </rect>
    </property>
   </widget>
   <widget class="QPushButton" name="buttonEndCall">
    <property name="geometry">
     <rect>
-     <x>470</x>
-     <y>90</y>
+     <x>530</x>
+     <y>390</y>
      <width>101</width>
      <height>25</height>
     </rect>
    </property>
    <property name="text">
     <string>End call</string>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="comboWebcam">
+   <property name="geometry">
+    <rect>
+     <x>470</x>
+     <y>150</y>
+     <width>161</width>
+     <height>22</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label">
+   <property name="geometry">
+    <rect>
+     <x>470</x>
+     <y>130</y>
+     <width>61</width>
+     <height>14</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Webcam:</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_2">
+   <property name="geometry">
+    <rect>
+     <x>470</x>
+     <y>180</y>
+     <width>81</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Microphone:</string>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="comboMicrophone">
+   <property name="geometry">
+    <rect>
+     <x>470</x>
+     <y>200</y>
+     <width>161</width>
+     <height>22</height>
+    </rect>
    </property>
   </widget>
  </widget>
