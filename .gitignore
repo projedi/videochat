@@ -2,7 +2,7 @@
 *.o
 *.swp
 videochat-oldapi
-ui_mainwindow.h
+ui_*.h
 moc_*.cpp
 Makefile*
 3rd-party/

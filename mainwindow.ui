@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>627</width>
-    <height>240</height>
+    <width>229</width>
+    <height>230</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -86,194 +86,60 @@ radius: 1.35, stop: 0 #fff, stop: 1 #ccc);
 }</string>
   </property>
   <widget class="QWidget" name="centralWidget">
-   <widget class="Player" name="playerLocal" native="true">
-    <property name="geometry">
-     <rect>
-      <x>300</x>
-      <y>150</y>
-      <width>111</width>
-      <height>91</height>
-     </rect>
-    </property>
-   </widget>
-   <widget class="Player" name="playerRemote" native="true">
-    <property name="geometry">
-     <rect>
-      <x>0</x>
-      <y>0</y>
-      <width>301</width>
-      <height>241</height>
-     </rect>
-    </property>
-   </widget>
    <widget class="QPushButton" name="buttonCall">
     <property name="geometry">
      <rect>
-      <x>420</x>
-      <y>210</y>
-      <width>101</width>
+      <x>5</x>
+      <y>200</y>
+      <width>121</width>
       <height>21</height>
      </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                  stop: 0 #00E100, stop: 0.4 #00DD00,
+                                  stop: 0.5 #00D800, stop: 1.0 #00D300);</string>
     </property>
     <property name="text">
      <string>Call</string>
     </property>
    </widget>
-   <widget class="QPushButton" name="buttonSendFile">
+   <widget class="QListWidget" name="listWidget">
     <property name="geometry">
      <rect>
-      <x>530</x>
-      <y>210</y>
-      <width>94</width>
+      <x>10</x>
+      <y>11</y>
+      <width>211</width>
+      <height>181</height>
+     </rect>
+    </property>
+    <item>
+     <property name="text">
+      <string>192.168.0.1</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>192.168.0.2</string>
+     </property>
+    </item>
+   </widget>
+   <widget class="QPushButton" name="buttonExit">
+    <property name="geometry">
+     <rect>
+      <x>130</x>
+      <y>200</y>
+      <width>91</width>
       <height>21</height>
      </rect>
     </property>
     <property name="text">
-     <string>Send file</string>
+     <string>Exit</string>
     </property>
    </widget>
-   <widget class="QLabel" name="label_8">
-    <property name="geometry">
-     <rect>
-      <x>310</x>
-      <y>0</y>
-      <width>81</width>
-      <height>21</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Local video</string>
-    </property>
-   </widget>
-   <widget class="QComboBox" name="comboBoxVideoDevs">
-    <property name="geometry">
-     <rect>
-      <x>310</x>
-      <y>20</y>
-      <width>107</width>
-      <height>21</height>
-     </rect>
-    </property>
-   </widget>
-   <widget class="QLabel" name="label_9">
-    <property name="geometry">
-     <rect>
-      <x>310</x>
-      <y>50</y>
-      <width>81</width>
-      <height>21</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Local audio</string>
-    </property>
-   </widget>
-   <widget class="QComboBox" name="comboBoxAudioDevs">
-    <property name="geometry">
-     <rect>
-      <x>310</x>
-      <y>70</y>
-      <width>107</width>
-      <height>21</height>
-     </rect>
-    </property>
-   </widget>
-   <widget class="QLabel" name="label_10">
-    <property name="geometry">
-     <rect>
-      <x>430</x>
-      <y>0</y>
-      <width>81</width>
-      <height>21</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Remote video</string>
-    </property>
-   </widget>
-   <widget class="QComboBox" name="comboBoxAudioDevsRemote">
-    <property name="geometry">
-     <rect>
-      <x>430</x>
-      <y>70</y>
-      <width>107</width>
-      <height>21</height>
-     </rect>
-    </property>
-   </widget>
-   <widget class="QComboBox" name="comboBoxVideoDevsRemote">
-    <property name="geometry">
-     <rect>
-      <x>430</x>
-      <y>20</y>
-      <width>107</width>
-      <height>21</height>
-     </rect>
-    </property>
-   </widget>
-   <widget class="QLabel" name="label_11">
-    <property name="geometry">
-     <rect>
-      <x>430</x>
-      <y>50</y>
-      <width>81</width>
-      <height>21</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Remote audio audio</string>
-    </property>
-   </widget>
-   <widget class="QLineEdit" name="lineEditRemote">
-    <property name="geometry">
-     <rect>
-      <x>430</x>
-      <y>100</y>
-      <width>113</width>
-      <height>20</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>udp://127.0.0.1:8080</string>
-    </property>
-   </widget>
-   <widget class="QLineEdit" name="lineEditLocal">
-    <property name="geometry">
-     <rect>
-      <x>310</x>
-      <y>100</y>
-      <width>113</width>
-      <height>20</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>udp://192.168.0.1:8080</string>
-    </property>
-   </widget>
-   <zorder>playerLocal</zorder>
-   <zorder>playerRemote</zorder>
-   <zorder>buttonCall</zorder>
-   <zorder>buttonSendFile</zorder>
-   <zorder>label_8</zorder>
-   <zorder>comboBoxVideoDevs</zorder>
-   <zorder>label_9</zorder>
-   <zorder>comboBoxAudioDevs</zorder>
-   <zorder>label_10</zorder>
-   <zorder>comboBoxVideoDevsRemote</zorder>
-   <zorder>label_11</zorder>
-   <zorder>comboBoxAudioDevsRemote</zorder>
-   <zorder>lineEditRemote</zorder>
-   <zorder>lineEditLocal</zorder>
   </widget>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
- <customwidgets>
-  <customwidget>
-   <class>Player</class>
-   <extends>QWidget</extends>
-   <header>player.h</header>
-  </customwidget>
- </customwidgets>
  <resources/>
  <connections/>
 </ui>
