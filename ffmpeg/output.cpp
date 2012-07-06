@@ -30,7 +30,7 @@ Output::Stream::Stream(StreamInfo info,AVCodec** encoder,Output* owner,int index
          if(codec->codec_id == CODEC_ID_H264) {
             //av_dict_set(&dic,"profile","baseline",0);
             //av_dict_set(&dic,"level","13",0);
-            //codec->bit_rate = 160000;
+            codec->bit_rate = 160000;
             //codec->pix_fmt = PIX_FMT_YUV420P;
          }
          //Oh, C++, you can't do that yourself.
