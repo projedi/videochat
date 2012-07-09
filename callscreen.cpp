@@ -4,10 +4,13 @@
 using namespace std;
 
 //TODO: Add microphone into the play
-CallScreen::CallScreen( QString contactName, QString remoteURI, QString localURI
-                      , QWidget *parent): QDialog(parent), ui(new Ui::CallScreen) {
+CallScreen::CallScreen( QString contactName, QString remoteURI, QString localURI , QAbstractSocket* socket, QWidget *parent): QDialog(parent)
+                                                                 , ui(new Ui::CallScreen) {
+   this->socket = socket;
+   connect(socket,SIGNAL(error(QAbstractSocket::SocketError))
+          ,SLOT(onSocketError(QAbstractSocket::SocketError)));
    ui->setupUi(this);
-   connect(ui->buttonEndCall,SIGNAL(clicked()),SLOT(close()));
+   connect(ui->buttonEndCall,SIGNAL(clicked()),SLOT(rejectCall()));
    setWindowTitle("Conversation with " + contactName);
    //setupFuture = QtConcurrent::run(this,&CallScreen::setupConnection,contactURI,localURI);
    VideoHardware cameras;
@@ -48,9 +51,12 @@ CallScreen::~CallScreen() {
     delete server;
 }
 
-void CallScreen::setupConnection(QString remoteURI, QString localURI) {
+void CallScreen::rejectCall() {
+   cout << "Ending call" << endl;
+   socket->disconnectFromHost();
+   close();
 }
 
-void CallScreen::showEvent(QShowEvent*) {
-   //setupFuture.waitForFinished(); 
+void CallScreen::onSocketError(QAbstractSocket::SocketError err) {
+   if(err == QAbstractSocket::RemoteHostClosedError) rejectCall();
 }

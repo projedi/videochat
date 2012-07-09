@@ -10,10 +10,10 @@ CallRequest::CallRequest(QString contactName, QWidget *parent): QDialog(parent)
    ui->setupUi(this);
    ui->labelContact->setText("Contacting " + contactName);
    setWindowTitle(ui->labelContact->text());
-   connect(ui->buttonAbort,SIGNAL(clicked()),SLOT(reject()));
+   connect(ui->buttonAbort,SIGNAL(clicked()),SLOT(rejectCall()));
    socket = new QTcpSocket();
    connect(socket,SIGNAL(connected()),SLOT(discuss()));
-   connect(socket,SIGNAL(disconnected()),SLOT(reject()));
+   //connect(socket,SIGNAL(disconnected()),SLOT(reject()));
    connect(socket,SIGNAL(readyRead()),SLOT(discuss()));
    connect(socket,SIGNAL(error(QAbstractSocket::SocketError))
           ,SLOT(onSocketError(QAbstractSocket::SocketError)));
@@ -24,20 +24,28 @@ CallRequest::CallRequest(QString contactName, QWidget *parent): QDialog(parent)
 CallRequest::~CallRequest() {
    cout << "Deleting request" << endl;
    //socket->disconnectFromHost();
-   delete socket;
+   //delete socket;
    delete ui;
+}
+
+void CallRequest::rejectCall() {
+   cout << "Rejecting call" << endl;
+   socket->disconnectFromHost();
+   reject();
 }
 
 void CallRequest::discuss() {
    char buffer[51];
    if(state == 0) {
-      socket->write("VIDEOCHAT",9);
-      cout << "wrote conversation starter" << endl;
       state = 1;
+      socket->write("VIDEOCHAT",9);
+      socket->flush();
+      cout << "wrote conversation starter" << endl;
       return;
    } else if(state == 1) {
+      state = 2;
       int len = socket->read(buffer,50);
-      if(len < 0) { reject(); return; }
+      if(len < 0) rejectCall();
       buffer[len] = 0;
       cout << "read some data of length " << len << " and here it is: " << buffer << endl;
       QString reply(buffer);
@@ -52,12 +60,11 @@ void CallRequest::discuss() {
          localURI = "udp://" + socket->localAddress().toString() + ":" + localPort;
          accept();  
          return;
-      } else reject();
-      state = 2;
+      } else rejectCall();
       return;
    }
 }
 
 void CallRequest::onSocketError(QAbstractSocket::SocketError err) {
-   if(err == QAbstractSocket::RemoteHostClosedError) socket->disconnectFromHost();
+   if(err == QAbstractSocket::RemoteHostClosedError) rejectCall();
 }

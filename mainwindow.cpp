@@ -23,11 +23,13 @@ void MainWindow::startCall() {
    if(ui->contactList->selectedItems().count() < 1) return;
    QString contactName = ui->contactList->selectedItems()[0]->text();
    CallRequest req(contactName);
+   QAbstractSocket* socket = req.getSocket();
    if(req.exec() == (int)QDialog::Accepted) {
       cout << "Starting the show" << endl;
-      CallScreen cs(req.getRemoteURI(),req.getRemoteURI(),req.getLocalURI(),this);
+      CallScreen cs(req.getRemoteURI(),req.getRemoteURI(),req.getLocalURI(),socket,this);
       cs.exec();
    }
+   delete socket;
 }
 
 void MainWindow::handleCall() {
@@ -37,8 +39,10 @@ void MainWindow::handleCall() {
       CallResponse resp(socket,this);
       if(resp.exec() == (int)QDialog::Accepted) {
          cout << "Starting the show" << endl;
-         CallScreen cs(resp.getRemoteURI(),resp.getRemoteURI(),resp.getLocalURI(),this);
+         CallScreen cs(resp.getRemoteURI(),resp.getRemoteURI()
+                      ,resp.getLocalURI(),socket,this);
          cs.exec();
       }
-   } catch(...) { cout << "Bogus call" << endl; return; }
+   } catch(...) { cout << "Bogus call" << endl; }
+   delete socket;
 }

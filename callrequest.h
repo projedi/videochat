@@ -13,7 +13,9 @@ public:
    ~CallRequest();
    QString getLocalURI() const { return localURI; }
    QString getRemoteURI() const { return remoteURI; }
+   QAbstractSocket* getSocket() { return socket; }
 private slots:
+   void rejectCall();
    void discuss();
    void onSocketError(QAbstractSocket::SocketError);
 private:

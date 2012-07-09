@@ -16,6 +16,7 @@ public:
    QString getRemoteURI() const { return remoteURI; }
 private slots:
    void acceptCall();
+   void rejectCall();
    void discuss();
    void onSocketError(QAbstractSocket::SocketError);
 private:

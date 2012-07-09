@@ -3,6 +3,7 @@
 #include <QDialog>
 #include <QtConcurrentRun>
 #include <QFuture>
+#include <QAbstractSocket>
 #include "ffmpeg.h"
 
 namespace Ui { class CallScreen; }
@@ -11,14 +12,14 @@ class CallScreen : public QDialog {
 Q_OBJECT
 public:
    explicit CallScreen( QString contactName, QString contactURI, QString localURI
-                      , QWidget *parent = 0);
+                      , QAbstractSocket* socket, QWidget *parent = 0);
    ~CallScreen();
-protected:
-   void showEvent(QShowEvent*);
+private slots:
+   void rejectCall();
+   void onSocketError(QAbstractSocket::SocketError);
 private:
-   QFuture<void> setupFuture;
-   void setupConnection(QString remoteURI, QString localURI);
    Ui::CallScreen *ui;
    Input *remote, *camera, *microphone;
    Output *server;
+   QAbstractSocket* socket;
 };
