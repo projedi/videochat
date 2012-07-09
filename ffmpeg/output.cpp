@@ -46,9 +46,12 @@ Output::Stream::Stream(StreamInfo info,AVCodec** encoder,Output* owner,int index
    }
 }
 
+//TODO: Check if here something leaks
 Output::Stream::~Stream() {
-   if(codec) { avcodec_close(codec); av_free(codec); }
-   if(type == Video && scaler) sws_freeContext(scaler);
+   //cout << "Closing output stream" << endl;
+   //if(codec) { cout << "removing codec" << endl; avcodec_close(codec); av_free(codec); }
+   //if(type == Video && scaler) { cout << "removing scaler" << endl; sws_freeContext(scaler); }
+   //cout << "Closed output stream" << endl; 
    //else if(type == Audio && resampler) swr_freeContext(&resampler);
 }
 
@@ -115,7 +118,11 @@ int Output::Stream::getIndex() { return index; }
 
 AVCodecContext* Output::Stream::getCodec() { return codec; }
 
-Output::~Output() { }
+Output::~Output() {
+   for(int i = 0; i < streams.count(); i++) {
+      delete streams[i];
+   }
+}
 
 QList<Output::Stream*> Output::getStreams() const { return streams; }
 

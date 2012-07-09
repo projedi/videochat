@@ -12,7 +12,6 @@ CallScreen::CallScreen( QString contactName, QString remoteURI, QString localURI
    ui->setupUi(this);
    connect(ui->buttonEndCall,SIGNAL(clicked()),SLOT(rejectCall()));
    setWindowTitle("Conversation with " + contactName);
-   //setupFuture = QtConcurrent::run(this,&CallScreen::setupConnection,contactURI,localURI);
    VideoHardware cameras;
    AudioHardware microphones;
    ui->comboCamera->addItems(cameras.getNames());
@@ -26,6 +25,9 @@ CallScreen::CallScreen( QString contactName, QString remoteURI, QString localURI
                             , cameras.getFiles()[camIndex]);
    camera->setState(Input::Playing);
    Input::Stream *cameraStream = camera->getStreams()[0];
+
+   cout << "Setting up microphone(dummy)" << endl;
+   microphone = 0;
 
    cout << "Setting up server to " << remoteURI.toAscii().data() << endl;
    server = new OutputGeneric("mpegts", remoteURI);
@@ -44,11 +46,19 @@ CallScreen::CallScreen( QString contactName, QString remoteURI, QString localURI
 }
 
 CallScreen::~CallScreen() {
-    delete ui;
-    delete remote;
-    delete camera;
-    delete microphone;
-    delete server;
+   camera->setState(Input::Paused);
+   remote->setState(Input::Paused);
+   cout << "Deleting remote" << endl;
+   delete remote;
+   cout << "Deleting camera" << endl;
+   delete camera;
+   cout << "Deleting ui on the call screen" << endl;
+   delete ui;
+   cout << "Deleting server" << endl;
+   delete server;
+   cout << "Deleting microphone if exists" << endl;
+   if(microphone) delete microphone;
+   cout << "CallScreen deleted" << endl;
 }
 
 void CallScreen::rejectCall() {

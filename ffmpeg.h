@@ -108,6 +108,7 @@ public:
    InputGeneric(QString fmt, QString file);
    ~InputGeneric();
 private:
+   QMutex m;
    AVFormatContext* format;
    void worker();
 };

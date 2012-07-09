@@ -5,7 +5,7 @@ using namespace std;
 
 Player::Player(QWidget* parent): QWidget(parent) { pkt = 0; }
 
-Player::~Player() { }
+Player::~Player() { cout << "Closing player" << endl; }
 
 Output::Stream* Player::addStream(StreamInfo info) {
    if(info.type != Video) return 0;
