@@ -17,7 +17,6 @@ CallResponse::CallResponse( QAbstractSocket* socket, QWidget *parent)
           ,SLOT(onSocketError(QAbstractSocket::SocketError)));
    connect(socket,SIGNAL(readyRead()),SLOT(discuss()));
    state = 0;
-   //discuss();
 }
 
 CallResponse::~CallResponse() {
@@ -27,22 +26,25 @@ CallResponse::~CallResponse() {
 
 void CallResponse::acceptCall() {
    if(state != 1) return;
-   cout << "Wrote acceptance" << endl;
    socket->write("ACCEPT 8080",11);
+   cout << "Wrote acceptance" << endl;
    state = 2;
 }
 
 void CallResponse::discuss() {
    char buffer[51];
    if(state == 0) {
+      cout << "Getting ready to read the first time" << endl;
       int len = socket->read(buffer,50);
       if(len < 0) reject();
       buffer[len] = 0;
       cout << "read data " << len << " long: " << buffer << endl;
       QString init(buffer);
-      if(!init.startsWith("VIDEOCHAT")) throw -1;
+      if(!init.startsWith("VIDEOCHAT")) reject();
       state = 1;
+      return;
    } else if(state == 2) {
+      cout << "Getting ready to read after accepting call" << endl;
       int len = socket->read(buffer,50);
       if(len < 0) reject();
       buffer[len] = 0;
@@ -52,7 +54,10 @@ void CallResponse::discuss() {
       localURI = "udp://" + socket->localAddress().toString() + ":" + localPort;
       remoteURI = "udp://" + socket->peerAddress().toString() + ":" + remotePort;
       accept();
+      state = 3;
+      return;
    }
+   cout << "Missing with data" << endl;
 }
 
 void CallResponse::onSocketError(QAbstractSocket::SocketError err) {

@@ -23,7 +23,7 @@ CallRequest::CallRequest(QString contactName, QWidget *parent): QDialog(parent)
 
 CallRequest::~CallRequest() {
    cout << "Deleting request" << endl;
-   socket->disconnectFromHost();
+   //socket->disconnectFromHost();
    delete socket;
    delete ui;
 }
@@ -34,6 +34,7 @@ void CallRequest::discuss() {
       socket->write("VIDEOCHAT",9);
       cout << "wrote conversation starter" << endl;
       state = 1;
+      return;
    } else if(state == 1) {
       int len = socket->read(buffer,50);
       if(len < 0) { reject(); return; }
@@ -44,14 +45,16 @@ void CallRequest::discuss() {
          reply.remove(0,7);
          cout << "extracting port: " << reply.toAscii().data() << endl;
          socket->write("8081",4);
+         socket->flush();
          cout << "wrote my port: 8081" << endl;
          QString localPort = "8081";
          remoteURI = "udp://" + socket->peerAddress().toString() + ":" + reply;
          localURI = "udp://" + socket->localAddress().toString() + ":" + localPort;
          accept();  
+         return;
       } else reject();
-      cout << "Accept and reject didn't threw me away" << endl;
       state = 2;
+      return;
    }
 }
 
