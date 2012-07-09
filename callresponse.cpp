@@ -13,6 +13,8 @@ CallResponse::CallResponse( QAbstractSocket* socket, QWidget *parent)
    connect(ui->buttonDecline,SIGNAL(clicked()),SLOT(reject()));
    connect(ui->buttonAccept, SIGNAL(clicked()),SLOT(discuss()));
    connect(socket,SIGNAL(disconnected()),SLOT(reject()));
+   connect(socket,SIGNAL(error(QAbstractSocket::SocketError))
+          ,SLOT(onSocketError(QAbstractSocket::SocketError)));
    // Validity check
    char buffer[51];
    if(!socket->waitForReadyRead()) throw -1;
@@ -44,7 +46,6 @@ void CallResponse::discuss() {
    accept();
 }
 
-void CallResponse::showEvent(QShowEvent*) { /*validityFuture.waitForFinished();*/ if(!socket) reject(); }
-
-void CallResponse::checkValidity() {
+void CallResponse::onSocketError(QAbstractSocket::SocketError err) {
+   if(err == QAbstractSocket::RemoteHostClosedError) socket->disconnectFromHost();
 }

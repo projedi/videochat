@@ -18,6 +18,7 @@ CallRequest::CallRequest(QString contactName, QWidget *parent): QDialog(parent)
 
 CallRequest::~CallRequest() {
    cout << "Deleting request" << endl;
+   socket->disconnectFromHost();
    delete socket;
    delete ui;
 }

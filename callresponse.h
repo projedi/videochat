@@ -16,11 +16,8 @@ public:
    QString getRemoteURI() const { return remoteURI; }
 private slots:
    void discuss();
-protected:
-   void showEvent(QShowEvent*);
+   void onSocketError(QAbstractSocket::SocketError);
 private:
-   void checkValidity();
-   QFuture<void> validityFuture;
    QAbstractSocket* socket;
    Ui::CallResponse *ui;
    QString localURI;
