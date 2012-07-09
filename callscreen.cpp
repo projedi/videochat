@@ -4,25 +4,12 @@
 using namespace std;
 
 //TODO: Add microphone into the play
-CallScreen::CallScreen( QString contactName, QString contactURI, QString localURI
+CallScreen::CallScreen( QString contactName, QString remoteURI, QString localURI
                       , QWidget *parent): QDialog(parent), ui(new Ui::CallScreen) {
    ui->setupUi(this);
    cout << "Setting up call with " << contactName.toAscii().data() << endl;
    this->setWindowTitle("Conversation with " + contactName);
-   QtConcurrent::run(this,&CallScreen::setupConnection,contactURI,localURI);
-}
-
-CallScreen::~CallScreen() {
-    delete ui;
-    delete remote;
-    delete camera;
-    delete microphone;
-    delete server;
-}
-
-void CallScreen::on_buttonEndCall_clicked() { close(); }
-
-void CallScreen::setupConnection(QString remoteURI, QString localURI) {
+   //setupFuture = QtConcurrent::run(this,&CallScreen::setupConnection,contactURI,localURI);
    VideoHardware cameras;
    AudioHardware microphones;
    ui->comboCamera->addItems(cameras.getNames());
@@ -51,4 +38,21 @@ void CallScreen::setupConnection(QString remoteURI, QString localURI) {
    Output::Stream *playerRemoteVideoStream = ui->playerRemote->addStream(remoteVideoStream->info());
    cameraStream->subscribe(playerLocalVideoStream);
    remoteVideoStream->subscribe(playerRemoteVideoStream);
+}
+
+CallScreen::~CallScreen() {
+    delete ui;
+    delete remote;
+    delete camera;
+    delete microphone;
+    delete server;
+}
+
+void CallScreen::on_buttonEndCall_clicked() { close(); }
+
+void CallScreen::setupConnection(QString remoteURI, QString localURI) {
+}
+
+void CallScreen::showEvent(QShowEvent*) {
+   //setupFuture.waitForFinished(); 
 }
