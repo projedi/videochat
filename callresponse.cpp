@@ -9,6 +9,7 @@ CallResponse::CallResponse( QAbstractSocket* socket, QWidget *parent)
    ui->setupUi(this);
    ui->labelContact->setText(socket->peerName());
    this->socket = socket;
+   connect(socket,SIGNAL(disconnected()),SLOT(reject()));
    validityFuture = QtConcurrent::run(this, &CallResponse::checkValidity);
 }
 

@@ -2,6 +2,7 @@
 
 #include <QDialog>
 #include <QTcpSocket>
+#include <QtConcurrentRun>
 
 namespace Ui { class CallRequest; }
 
@@ -15,6 +16,7 @@ public:
 private slots:
    void discuss();
 private:
+   void discussWorker();
    QAbstractSocket* socket;
    QString localURI;
    QString remoteURI;

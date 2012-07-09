@@ -11,8 +11,7 @@ public:
    explicit MainWindow(QWidget *parent = 0);
    ~MainWindow();
 private slots:
-   void on_buttonExit_clicked();
-   void on_buttonCall_clicked();
+   void startCall();
    void handleCall();
 private:
    Ui::MainWindow *ui;

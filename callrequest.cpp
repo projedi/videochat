@@ -10,11 +10,12 @@ CallRequest::CallRequest(QString contactName, QWidget *parent): QDialog(parent)
    ui->labelContact->setText(contactName);
    connect(ui->buttonAbort,SIGNAL(clicked()),SLOT(reject()));
    socket = new QTcpSocket();
-   connect(socket,SIGNAL(connected()),SLOT(discuss()),Qt::QueuedConnection);
+   connect(socket,SIGNAL(connected()),SLOT(discuss()));
    socket->connectToHost(QHostAddress(contactName), 8000);
 }
 
 CallRequest::~CallRequest() {
+   socket->close();
    delete socket;
    delete ui;
 }
@@ -23,6 +24,10 @@ QString CallRequest::getLocalURI() { return localURI; }
 QString CallRequest::getRemoteURI() { return remoteURI; }
 
 void CallRequest::discuss() {
+   QtConcurrent::run(this, &CallRequest::discussWorker);
+}
+
+void CallRequest::discussWorker() {
    char buffer[50];
    socket->write("VIDEOCHAT",9);
    cout << "wrote conversation starter" << endl;
