@@ -3,6 +3,7 @@
 #include "callrequest.h"
 #include "callresponse.h"
 #include "callscreen.h"
+#include <QtConcurrentRun>
 
 #include <iostream>
 using namespace std;
@@ -21,21 +22,23 @@ MainWindow::~MainWindow() { delete ui; }
 void MainWindow::startCall() {
    if(ui->contactList->selectedItems().count() < 1) return;
    QString contactName = ui->contactList->selectedItems()[0]->text();
-   CallRequest req(contactName,this);
+   CallRequest req(contactName);
    if(req.exec() == (int)QDialog::Accepted) {
       cout << "Starting the show" << endl;
-      CallScreen call(req.getRemoteURI(),req.getRemoteURI(),req.getLocalURI(),this);
-      call.exec();
+      CallScreen cs(req.getRemoteURI(),req.getRemoteURI(),req.getLocalURI(),this);
+      cs.exec();
    }
 }
 
 void MainWindow::handleCall() {
    cout << "Someone called me" << endl;
    QAbstractSocket* socket = server.nextPendingConnection();
-   CallResponse resp(socket,this);
-   if(resp.exec() == (int)QDialog::Accepted) {
-      cout << "Starting the show";
-      CallScreen call(resp.getRemoteURI(),resp.getRemoteURI(),resp.getLocalURI(),this);
-      call.exec();
-   }
+   try {
+      CallResponse resp(socket,this);
+      if(resp.exec() == (int)QDialog::Accepted) {
+         cout << "Starting the show" << endl;
+         CallScreen cs(resp.getRemoteURI(),resp.getRemoteURI(),resp.getLocalURI(),this);
+         cs.exec();
+      }
+   } catch(...) { cout << "Bogus call" << endl; return; }
 }

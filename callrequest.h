@@ -6,19 +6,19 @@
 
 namespace Ui { class CallRequest; }
 
-class CallRequest : public QDialog {
+class CallRequest: public QDialog {
 Q_OBJECT
 public:
    explicit CallRequest(QString contactName, QWidget *parent = 0);
    ~CallRequest();
-   QString getLocalURI();
-   QString getRemoteURI();
+   QString getLocalURI() const { return localURI; }
+   QString getRemoteURI() const { return remoteURI; }
 private slots:
    void discuss();
 private:
    void discussWorker();
    QAbstractSocket* socket;
+   Ui::CallRequest *ui;
    QString localURI;
    QString remoteURI;
-   Ui::CallRequest *ui;
 };

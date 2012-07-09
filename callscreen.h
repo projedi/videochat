@@ -13,8 +13,6 @@ public:
    explicit CallScreen( QString contactName, QString contactURI, QString localURI
                       , QWidget *parent = 0);
    ~CallScreen();
-private slots:
-   void on_buttonEndCall_clicked();
 protected:
    void showEvent(QShowEvent*);
 private:

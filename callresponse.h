@@ -12,11 +12,10 @@ Q_OBJECT
 public:
    explicit CallResponse(QAbstractSocket* socket, QWidget *parent = 0);
    ~CallResponse();
-   QString getLocalURI();
-   QString getRemoteURI();
+   QString getLocalURI() const { return localURI; }
+   QString getRemoteURI() const { return remoteURI; }
 private slots:
-   void on_buttonAccept_clicked();
-   void on_buttonDecline_clicked();
+   void discuss();
 protected:
    void showEvent(QShowEvent*);
 private:

@@ -6,8 +6,10 @@ using namespace std;
 
 CallRequest::CallRequest(QString contactName, QWidget *parent): QDialog(parent)
                                                               , ui(new Ui::CallRequest) {
+   cout << "Starting request" << endl;
    ui->setupUi(this);
-   ui->labelContact->setText(contactName);
+   ui->labelContact->setText("Contacting " + contactName);
+   setWindowTitle(ui->labelContact->text());
    connect(ui->buttonAbort,SIGNAL(clicked()),SLOT(reject()));
    socket = new QTcpSocket();
    connect(socket,SIGNAL(connected()),SLOT(discuss()));
@@ -15,38 +17,30 @@ CallRequest::CallRequest(QString contactName, QWidget *parent): QDialog(parent)
 }
 
 CallRequest::~CallRequest() {
-   socket->close();
+   cout << "Deleting request" << endl;
    delete socket;
    delete ui;
 }
 
-QString CallRequest::getLocalURI() { return localURI; }
-QString CallRequest::getRemoteURI() { return remoteURI; }
-
-void CallRequest::discuss() {
-   QtConcurrent::run(this, &CallRequest::discussWorker);
-}
+void CallRequest::discuss() { QtConcurrent::run(this, &CallRequest::discussWorker); }
 
 void CallRequest::discussWorker() {
-   char buffer[50];
+   char buffer[51];
    socket->write("VIDEOCHAT",9);
    cout << "wrote conversation starter" << endl;
    if(!socket->waitForReadyRead()) reject();
-   cout << "read some data" << endl;
    int len = socket->read(buffer,50);
    buffer[len] = 0;
+   cout << "read some data of length " << len << " and here it is: " << buffer << endl;
    QString reply(buffer);
-   cout << "this is the data I read: " << buffer << endl;
-   if(reply.startsWith("ACCEPT")) {
+   if(reply.startsWith("ACCEPT ")) {
       reply.remove(0,7);
       cout << "extracting port: " << reply.toAscii().data() << endl;
-      cout << "wrote my port" << endl;
       socket->write("8081",4);
-      socket->flush();
+      cout << "wrote my port: 8081" << endl;
       QString localPort = "8081";
       remoteURI = "udp://" + socket->peerAddress().toString() + ":" + reply;
       localURI = "udp://" + socket->localAddress().toString() + ":" + localPort;
-      socket->disconnectFromHost();
       accept();  
    } else reject();
 }

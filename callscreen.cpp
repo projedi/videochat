@@ -7,8 +7,8 @@ using namespace std;
 CallScreen::CallScreen( QString contactName, QString remoteURI, QString localURI
                       , QWidget *parent): QDialog(parent), ui(new Ui::CallScreen) {
    ui->setupUi(this);
-   cout << "Setting up call with " << contactName.toAscii().data() << endl;
-   this->setWindowTitle("Conversation with " + contactName);
+   connect(ui->buttonEndCall,SIGNAL(clicked()),SLOT(close()));
+   setWindowTitle("Conversation with " + contactName);
    //setupFuture = QtConcurrent::run(this,&CallScreen::setupConnection,contactURI,localURI);
    VideoHardware cameras;
    AudioHardware microphones;
@@ -47,8 +47,6 @@ CallScreen::~CallScreen() {
     delete microphone;
     delete server;
 }
-
-void CallScreen::on_buttonEndCall_clicked() { close(); }
 
 void CallScreen::setupConnection(QString remoteURI, QString localURI) {
 }
