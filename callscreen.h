@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QDialog>
+#include <QtConcurrentRun>
 #include "ffmpeg.h"
 
 namespace Ui { class CallScreen; }
@@ -14,6 +15,7 @@ public:
 private slots:
    void on_buttonEndCall_clicked();
 private:
+   void setupConnection(QString remoteURI, QString localURI);
    Ui::CallScreen *ui;
    Input *remote, *camera, *microphone;
    Output *server;

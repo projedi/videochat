@@ -9,6 +9,20 @@ CallScreen::CallScreen( QString contactName, QString contactURI, QString localUR
    ui->setupUi(this);
    cout << "Setting up call with " << contactName.toAscii().data() << endl;
    this->setWindowTitle("Conversation with " + contactName);
+   QtConcurrent::run(this,&CallScreen::setupConnection,contactURI,localURI);
+}
+
+CallScreen::~CallScreen() {
+    delete ui;
+    delete remote;
+    delete camera;
+    delete microphone;
+    delete server;
+}
+
+void CallScreen::on_buttonEndCall_clicked() { close(); }
+
+void CallScreen::setupConnection(QString remoteURI, QString localURI) {
    VideoHardware cameras;
    AudioHardware microphones;
    ui->comboCamera->addItems(cameras.getNames());
@@ -23,8 +37,8 @@ CallScreen::CallScreen( QString contactName, QString contactURI, QString localUR
    camera->setState(Input::Playing);
    Input::Stream *cameraStream = camera->getStreams()[0];
 
-   cout << "Setting up server to " << contactURI.toAscii().data() << endl;
-   server = new OutputGeneric("mpegts", contactURI);
+   cout << "Setting up server to " << remoteURI.toAscii().data() << endl;
+   server = new OutputGeneric("mpegts", remoteURI);
    Output::Stream *serverVideoStream = server->addStream(cameraStream->info());
    cameraStream->subscribe(serverVideoStream);
 
@@ -37,16 +51,4 @@ CallScreen::CallScreen( QString contactName, QString contactURI, QString localUR
    Output::Stream *playerRemoteVideoStream = ui->playerRemote->addStream(remoteVideoStream->info());
    cameraStream->subscribe(playerLocalVideoStream);
    remoteVideoStream->subscribe(playerRemoteVideoStream);
-}
-
-CallScreen::~CallScreen() {
-    delete ui;
-    delete remote;
-    delete camera;
-    delete microphone;
-    delete server;
-}
-
-void CallScreen::on_buttonEndCall_clicked() {
-    this->close();
 }
