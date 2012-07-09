@@ -15,10 +15,11 @@ public:
    QString getRemoteURI() const { return remoteURI; }
 private slots:
    void discuss();
+   void onSocketError(QAbstractSocket::SocketError);
 private:
-   void discussWorker();
    QAbstractSocket* socket;
    Ui::CallRequest *ui;
    QString localURI;
    QString remoteURI;
+   int state;
 };

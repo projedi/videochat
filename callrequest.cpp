@@ -13,6 +13,11 @@ CallRequest::CallRequest(QString contactName, QWidget *parent): QDialog(parent)
    connect(ui->buttonAbort,SIGNAL(clicked()),SLOT(reject()));
    socket = new QTcpSocket();
    connect(socket,SIGNAL(connected()),SLOT(discuss()));
+   connect(socket,SIGNAL(disconnected()),SLOT(reject()));
+   connect(socket,SIGNAL(readyRead()),SLOT(discuss()));
+   connect(socket,SIGNAL(error(QAbstractSocket::SocketError))
+          ,SLOT(onSocketError(QAbstractSocket::SocketError)));
+   state = 0;
    socket->connectToHost(QHostAddress(contactName), 8000);
 }
 
@@ -23,25 +28,33 @@ CallRequest::~CallRequest() {
    delete ui;
 }
 
-void CallRequest::discuss() { QtConcurrent::run(this, &CallRequest::discussWorker); }
-
-void CallRequest::discussWorker() {
+void CallRequest::discuss() {
    char buffer[51];
-   socket->write("VIDEOCHAT",9);
-   cout << "wrote conversation starter" << endl;
-   if(!socket->waitForReadyRead()) reject();
-   int len = socket->read(buffer,50);
-   buffer[len] = 0;
-   cout << "read some data of length " << len << " and here it is: " << buffer << endl;
-   QString reply(buffer);
-   if(reply.startsWith("ACCEPT ")) {
-      reply.remove(0,7);
-      cout << "extracting port: " << reply.toAscii().data() << endl;
-      socket->write("8081",4);
-      cout << "wrote my port: 8081" << endl;
-      QString localPort = "8081";
-      remoteURI = "udp://" + socket->peerAddress().toString() + ":" + reply;
-      localURI = "udp://" + socket->localAddress().toString() + ":" + localPort;
-      accept();  
-   } else reject();
+   if(state == 0) {
+      socket->write("VIDEOCHAT",9);
+      cout << "wrote conversation starter" << endl;
+      state = 1;
+   } else if(state == 1) {
+      int len = socket->read(buffer,50);
+      if(len < 0) { reject(); return; }
+      buffer[len] = 0;
+      cout << "read some data of length " << len << " and here it is: " << buffer << endl;
+      QString reply(buffer);
+      if(reply.startsWith("ACCEPT ")) {
+         reply.remove(0,7);
+         cout << "extracting port: " << reply.toAscii().data() << endl;
+         socket->write("8081",4);
+         cout << "wrote my port: 8081" << endl;
+         QString localPort = "8081";
+         remoteURI = "udp://" + socket->peerAddress().toString() + ":" + reply;
+         localURI = "udp://" + socket->localAddress().toString() + ":" + localPort;
+         accept();  
+      } else reject();
+      cout << "Accept and reject didn't threw me away" << endl;
+      state = 2;
+   }
+}
+
+void CallRequest::onSocketError(QAbstractSocket::SocketError err) {
+   if(err == QAbstractSocket::RemoteHostClosedError) socket->disconnectFromHost();
 }

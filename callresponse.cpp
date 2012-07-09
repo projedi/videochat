@@ -11,18 +11,13 @@ CallResponse::CallResponse( QAbstractSocket* socket, QWidget *parent)
    ui->labelContact->setText("Call request from " + socket->peerAddress().toString());
    setWindowTitle(ui->labelContact->text());
    connect(ui->buttonDecline,SIGNAL(clicked()),SLOT(reject()));
-   connect(ui->buttonAccept, SIGNAL(clicked()),SLOT(discuss()));
+   connect(ui->buttonAccept, SIGNAL(clicked()),SLOT(acceptCall()));
    connect(socket,SIGNAL(disconnected()),SLOT(reject()));
    connect(socket,SIGNAL(error(QAbstractSocket::SocketError))
           ,SLOT(onSocketError(QAbstractSocket::SocketError)));
-   // Validity check
-   char buffer[51];
-   if(!socket->waitForReadyRead()) throw -1;
-   int len = socket->read(buffer,50);
-   buffer[len] = 0;
-   cout << "read data " << len << " long: " << buffer << endl;
-   QString init(buffer);
-   if(!init.startsWith("VIDEOCHAT")) throw -1;
+   connect(socket,SIGNAL(readyRead()),SLOT(discuss()));
+   state = 0;
+   //discuss();
 }
 
 CallResponse::~CallResponse() {
@@ -30,20 +25,34 @@ CallResponse::~CallResponse() {
    delete ui;
 }
 
-void CallResponse::discuss() {
-   //validityFuture.waitForFinished();
-   char buffer[51];
-   QString localPort = "8080";
+void CallResponse::acceptCall() {
+   if(state != 1) return;
    cout << "Wrote acceptance" << endl;
    socket->write("ACCEPT 8080",11);
-   if(!socket->waitForReadyRead()) reject();
-   int len = socket->read(buffer,50);
-   buffer[len] = 0;
-   cout << "read data " << len << " long: " << buffer << endl;
-   QString remotePort(buffer);
-   localURI = "udp://" + socket->localAddress().toString() + ":" + localPort;
-   remoteURI = "udp://" + socket->peerAddress().toString() + ":" + remotePort;
-   accept();
+   state = 2;
+}
+
+void CallResponse::discuss() {
+   char buffer[51];
+   if(state == 0) {
+      int len = socket->read(buffer,50);
+      if(len < 0) reject();
+      buffer[len] = 0;
+      cout << "read data " << len << " long: " << buffer << endl;
+      QString init(buffer);
+      if(!init.startsWith("VIDEOCHAT")) throw -1;
+      state = 1;
+   } else if(state == 2) {
+      int len = socket->read(buffer,50);
+      if(len < 0) reject();
+      buffer[len] = 0;
+      cout << "read data " << len << " long: " << buffer << endl;
+      QString localPort = "8080";
+      QString remotePort(buffer);
+      localURI = "udp://" + socket->localAddress().toString() + ":" + localPort;
+      remoteURI = "udp://" + socket->peerAddress().toString() + ":" + remotePort;
+      accept();
+   }
 }
 
 void CallResponse::onSocketError(QAbstractSocket::SocketError err) {
