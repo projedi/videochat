@@ -9,6 +9,7 @@ CallResponse::CallResponse( QAbstractSocket* socket, QWidget *parent)
    ui->setupUi(this);
    ui->labelContact->setText(socket->peerName());
    this->socket = socket;
+   validityFuture = QtConcurrent::run(this, &CallResponse::checkValidity);
 }
 
 CallResponse::~CallResponse() {
@@ -20,6 +21,7 @@ QString CallResponse::getLocalURI() { return localURI; }
 QString CallResponse::getRemoteURI() { return remoteURI; }
 
 void CallResponse::on_buttonAccept_clicked() {
+   validityFuture.waitForFinished();
    char buffer[51];
    int len;
    QString localPort = "8080";
@@ -36,6 +38,26 @@ void CallResponse::on_buttonAccept_clicked() {
 }
 
 void CallResponse::on_buttonDecline_clicked() {
+   validityFuture.waitForFinished();
    socket->write("DECLINE",7);
    reject();
+}
+
+void CallResponse::showEvent(QShowEvent*) {
+   if(!socket) { socket->close(); reject(); }
+}
+
+void CallResponse::checkValidity() {
+   char buffer[100];
+   int len;
+   if(!socket->waitForReadyRead()) return;
+   len = socket->read(buffer,99);
+   cout << "it is " << len << " long" << endl;
+   buffer[len] = 0;
+   QString init(buffer);
+   cout << "This is what i read: " << buffer << endl;
+   if(init != "VIDEOCHAT") {
+      socket->close();
+      delete socket;
+   }
 }

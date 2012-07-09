@@ -10,7 +10,7 @@ CallRequest::CallRequest(QString contactName, QWidget *parent): QDialog(parent)
    ui->labelContact->setText(contactName);
    connect(ui->buttonAbort,SIGNAL(clicked()),SLOT(reject()));
    socket = new QTcpSocket();
-   connect(socket,SIGNAL(connected()),SLOT(discuss()));
+   connect(socket,SIGNAL(connected()),SLOT(discuss()),Qt::QueuedConnection);
    socket->connectToHost(QHostAddress(contactName), 8000);
 }
 

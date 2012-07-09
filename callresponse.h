@@ -2,6 +2,8 @@
 
 #include <QDialog>
 #include <QTcpSocket>
+#include <QFuture>
+#include <QtConcurrentRun>
 
 namespace Ui { class CallResponse; }
 
@@ -15,7 +17,11 @@ public:
 private slots:
    void on_buttonAccept_clicked();
    void on_buttonDecline_clicked();
+protected:
+   void showEvent(QShowEvent*);
 private:
+   void checkValidity();
+   QFuture<void> validityFuture;
    QAbstractSocket* socket;
    Ui::CallResponse *ui;
    QString localURI;

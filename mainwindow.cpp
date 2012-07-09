@@ -14,45 +14,27 @@ MainWindow::MainWindow(QWidget *parent): QMainWindow(parent), ui(new Ui::MainWin
    ui->contactList->setCurrentRow(0);
 }
 
-MainWindow::~MainWindow() {
-    delete ui;
-}
+MainWindow::~MainWindow() { delete ui; }
+
+void MainWindow::on_buttonExit_clicked() { close(); }
 
 void MainWindow::on_buttonCall_clicked() {
    if(ui->contactList->selectedItems().count() < 1) return;
-   QString contact = ui->contactList->selectedItems()[0]->text();
-   CallRequest req(contact,this);
-   int result = req.exec();
-   if(result == (int)QDialog::Accepted) {
+   QString contactName = ui->contactList->selectedItems()[0]->text();
+   CallRequest req(contactName,this);
+   if(req.exec() == (int)QDialog::Accepted) {
       cout << "Starting the show" << endl;
-      CallScreen call(contact,req.getRemoteURI(),req.getLocalURI(),this);
+      CallScreen call(req.getRemoteURI(),req.getRemoteURI(),req.getLocalURI(),this);
       call.exec();
    }
 }
 
-void MainWindow::on_buttonExit_clicked() {
-    this->close();
-}
-
 void MainWindow::handleCall() {
-    cout << "Someone called me" << endl;
+   cout << "Someone called me" << endl;
    QAbstractSocket* socket = server.nextPendingConnection();
-   char buffer[100];
-   int len;
-   if(!socket->waitForReadyRead()) return;
-   len = socket->read(buffer,99);
-   cout << "it is " << len << " long" << endl;
-   buffer[len] = 0;
-   QString init(buffer);
-   cout << "This is what i read: " << buffer << endl;
-   if(init != "VIDEOCHAT") {
-      socket->close();
-      return;
-   }
    CallResponse resp(socket,this);
-   int result = resp.exec();
-   if(result == (int)QDialog::Accepted) {
-       cout << "Starting the show";
+   if(resp.exec() == (int)QDialog::Accepted) {
+      cout << "Starting the show";
       CallScreen call(resp.getRemoteURI(),resp.getRemoteURI(),resp.getLocalURI(),this);
       call.exec();
    }
