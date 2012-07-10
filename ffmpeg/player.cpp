@@ -5,13 +5,17 @@ using namespace std;
 
 Player::Player(QWidget* parent): QWidget(parent) { pkt = 0; }
 
-Player::~Player() { cout << "Closing player" << endl; }
+Player::~Player() {
+   cout << "Closing player" << endl;
+   if(pkt) av_free_packet(pkt);
+}
 
 Output::Stream* Player::addStream(StreamInfo info) {
    if(info.type != Video) return 0;
    AVCodec* encoder = avcodec_find_encoder(CODEC_ID_RAWVIDEO);
    info.video.width = this->width();
    info.video.height = this->height();
+   info.video.pixelFormat = PIX_FMT_RGB32;
    Stream* stream = new Stream(info,&encoder,this,0);
    streams.append(stream);
    return stream;

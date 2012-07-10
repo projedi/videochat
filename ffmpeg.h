@@ -39,6 +39,7 @@ class Output {
 public:
    class Stream {
    public:
+      //TODO: Actually it uses pixelFormat from time to time
       //Doesn't use pixelFormat and sampleFormat from StreamInfo
       //if encoder is 0, uses x264 for video, mp2 for audio
       //Throws 1 if can't associate codec context with encoder

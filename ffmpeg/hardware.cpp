@@ -14,7 +14,7 @@ VideoHardware::VideoHardware() {
 #if defined(LINUX)
    names.append("Default webcam");
    formats.append("v4l2");
-   files.append("/dev/video0");
+   files.append("/dev/video1");
 #elif defined(WIN32)
    names.append("Default webcam");
    formats.append("dshow");

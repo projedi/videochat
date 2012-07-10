@@ -15,10 +15,15 @@ Input::Stream::Stream(MediaType type, AVCodecContext* codec, Input* owner) {
    }
 }
 
-//TODO: Check for leaks here
 Input::Stream::~Stream() {
    cout << "Closing input stream" << endl;
-   //avcodec_close(codec); av_free(codec);
+   subscribers.clear();
+   if(codec) {
+      cout << "Closing codec on input stream" << endl;
+      avcodec_close(codec);
+      cout << "Freeing codec on input stream" << endl;
+      av_free(codec);
+   }
 }
 
 AVFrame* Input::Stream::decode(AVPacket* pkt) {
@@ -38,14 +43,12 @@ AVFrame* Input::Stream::decode(AVPacket* pkt) {
 
 void Input::Stream::broadcast(AVFrame* frame) {
    if(!frame) return;
-   QList<Output::Stream*>::iterator i;
    for(int i = 0; i < subscribers.count(); i++) {
       Output::Stream* subs = subscribers[i];
       try {
          AVPacket* pkt = subs->encode(frame);
          subs->sendToOwner(pkt);
       } catch(...) { cout << "Error broadcasting to a stream" << endl; continue; }
-      //av_free_packet(pkt);
    }
    av_free(frame);
 }
@@ -81,7 +84,7 @@ Input::~Input() {
    //setState(Paused);
    //workerFuture.waitForFinished();
    for(int i = 0; i < streams.count(); i++) {
-      delete streams[i];
+      if(streams[i]) delete streams[i];
    }
 }
 
@@ -96,6 +99,7 @@ void Input::setState(Input::State state) {
    if(state == Playing) workerFuture = QtConcurrent::run(this,&Input::worker);
 }
 
+//TODO: provide a way to automagically determine the format
 InputGeneric::InputGeneric(QString fmt, QString file) {
    QByteArray formatName = fmt.toAscii();
    QByteArray fileName = file.toAscii();
@@ -121,8 +125,10 @@ InputGeneric::InputGeneric(QString fmt, QString file) {
 }
 
 InputGeneric::~InputGeneric() {
+   // TODO: for the same reason as in OutputGeneric
+   // TODO: also check that delete nullifies pointer
+   for(int i = 0; i < streams.count(); i++) { if(streams[i]) delete streams[i]; }
    avformat_close_input(&format);
-   format = 0;
    //cout << "Waiting for the worker cycle to end" << endl;;
    //QMutexLocker l(&m);
    //state = Paused;
@@ -136,6 +142,7 @@ void InputGeneric::worker() {
       //if(state != Playing) return;
       AVPacket* pkt = new AVPacket();
       av_init_packet(pkt);
+      //TODO: determine when negative number is an EOF
       if(av_read_frame(format,pkt) < 0) continue;
       //if(state != Playing) return;
       //cout << "On in: pts=" << pkt->pts << ";dts=" << pkt->dts << endl;
