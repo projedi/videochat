@@ -1,1 +1,3 @@
 Maintain socket to have control when I stop chat.
+Handle opening file errors(and gracefully disconnect). Make sure CallScreen constructor
+doesn't hang.

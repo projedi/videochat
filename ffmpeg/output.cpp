@@ -18,11 +18,11 @@ Output::Stream::Stream(StreamInfo info,AVCodec** encoder,Output* owner,int index
    if(*encoder) {
       codec = avcodec_alloc_context3(*encoder);
       codec->codec_id = (*encoder)->id;
-      codec->bit_rate = info.bitrate;
+      //codec->bit_rate = info.bitrate;
       //TODO: remove for case of file output
       codec->flags2 |= CODEC_FLAG2_LOCAL_HEADER;
       if(type == Video) {
-         if(!(*encoder)->pix_fmts) {
+         if((*encoder)->pix_fmts) {
             const PixelFormat* pix_fmt = (*encoder)->pix_fmts;
             for(; *pix_fmt != PIX_FMT_NONE; pix_fmt++) {
                if(info.video.pixelFormat == *pix_fmt) {
