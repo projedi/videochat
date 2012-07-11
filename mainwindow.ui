@@ -96,9 +96,24 @@ radius: 1.35, stop: 0 #fff, stop: 1 #ccc);
      </rect>
     </property>
     <property name="styleSheet">
-     <string notr="true">background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                                  stop: 0 #00E100, stop: 0.4 #00DD00,
-                                  stop: 0.5 #00D800, stop: 1.0 #00D300);</string>
+     <string notr="true">QPushButton {
+	padding: 2px;
+	background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                   stop: 0 #00E100, stop: 0.4 #00DD00,
+                                  stop: 0.5 #00D800, stop: 1.0 #00D300);
+}
+
+QPushButton:hover {
+background: qradialgradient(cx: 0.3, cy: -0.4,
+fx: 0.3, fy: -0.4,
+radius: 1.35, stop: 0 #0f0, stop: 1 #0b0);
+}
+
+QPushButton:pressed {
+background: qradialgradient(cx: 0.4, cy: -0.1,
+fx: 0.4, fy: -0.1,
+radius: 1.35, stop: 0 #0f0, stop: 1 #0c0);
+}</string>
     </property>
     <property name="text">
      <string>Call</string>
