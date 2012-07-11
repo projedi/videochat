@@ -54,12 +54,12 @@ Output::Stream::Stream(StreamInfo info,AVCodec** encoder,Output* owner,int index
 //TODO: Check if here something leaks
 Output::Stream::~Stream() {
    //cout << "Closing output stream" << endl;
-   if(codec) { cout << "removing codec in output stream" << endl;
-      avcodec_close(codec); av_free(codec);
-   }
-   if(type == Video && scaler) { cout << "removing scaler" << endl;
-      sws_freeContext(scaler);
-   } //else if(type == Audio && resampler) swr_freeContext(&resampler);
+   //if(codec) { cout << "removing codec in output stream" << endl;
+   //   avcodec_close(codec); //av_free(codec);
+   //}
+   //if(type == Video && scaler) { cout << "removing scaler" << endl;
+   //   sws_freeContext(scaler);
+   //} //else if(type == Audio && resampler) swr_freeContext(&resampler);
    //cout << "Closed output stream" << endl; 
 }
 
@@ -126,7 +126,8 @@ int Output::Stream::getIndex() { return index; }
 AVCodecContext* Output::Stream::getCodec() { return codec; }
 
 Output::~Output() {
-   for(int i = 0; i < streams.count(); i++) { if(streams[i]) delete streams[i]; }
+   //cout << "Original output destructor" << endl;
+   //for(int i = 0; i < streams.count(); i++) { if(streams[i]) delete streams[i]; }
 }
 
 QList<Output::Stream*> Output::getStreams() const { return streams; }
@@ -141,12 +142,19 @@ OutputGeneric::OutputGeneric(QString fmt, QString file) {
 
 OutputGeneric::~OutputGeneric() {
    av_write_trailer(format);
+   cout << "Closing file" << endl;
    avio_close(format->pb);
    // It seems like duplication from supertype destructor. But avformat_free_context
    // bluntly frees(without closing) codecs and i have to close each codec before doing
    // that.
    //TODO: make sure delete sets pointer to 0.
-   for(int i = 0; i < streams.count(); i++) { if(streams[i]) delete streams[i]; }
+   //for(int i = 0; i < streams.count(); i++) {
+   //   if(streams[i]) delete streams[i];
+   //   //streams[i] = 0;
+   //}
+   //streams.clear();
+   //cout << "Deleting format context on output generic" << endl;
+   cout << "freeing context" << endl;
    avformat_free_context(format);
 }
 

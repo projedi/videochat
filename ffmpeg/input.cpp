@@ -16,14 +16,14 @@ Input::Stream::Stream(MediaType type, AVCodecContext* codec, Input* owner) {
 }
 
 Input::Stream::~Stream() {
-   cout << "Closing input stream" << endl;
-   subscribers.clear();
-   if(codec) {
-      cout << "Closing codec on input stream" << endl;
-      avcodec_close(codec);
-      cout << "Freeing codec on input stream" << endl;
-      av_free(codec);
-   }
+   //cout << "Closing input stream" << endl;
+   //subscribers.clear();
+   //if(codec) {
+      //cout << "Closing codec on input stream" << endl;
+      //avcodec_close(codec);
+      //cout << "Freeing codec on input stream" << endl;
+      //av_free(codec);
+   //}
 }
 
 AVFrame* Input::Stream::decode(AVPacket* pkt) {
@@ -80,12 +80,12 @@ StreamInfo Input::Stream::info() {
 Input* Input::Stream::getOwner() { return owner; }
 
 Input::~Input() {
-   cout << "Closing input" << endl;
+   //cout << "Closing input" << endl;
    //setState(Paused);
    //workerFuture.waitForFinished();
-   for(int i = 0; i < streams.count(); i++) {
-      if(streams[i]) delete streams[i];
-   }
+   //for(int i = 0; i < streams.count(); i++) {
+   //   if(streams[i]) delete streams[i];
+   //}
 }
 
 QList<Input::Stream*> Input::getStreams() const { return streams; }
@@ -127,7 +127,7 @@ InputGeneric::InputGeneric(QString fmt, QString file) {
 InputGeneric::~InputGeneric() {
    // TODO: for the same reason as in OutputGeneric
    // TODO: also check that delete nullifies pointer
-   for(int i = 0; i < streams.count(); i++) { if(streams[i]) delete streams[i]; }
+   //for(int i = 0; i < streams.count(); i++) { if(streams[i]) delete streams[i]; }
    avformat_close_input(&format);
    //cout << "Waiting for the worker cycle to end" << endl;;
    //QMutexLocker l(&m);
@@ -147,10 +147,13 @@ void InputGeneric::worker() {
       //if(state != Playing) return;
       //cout << "On in: pts=" << pkt->pts << ";dts=" << pkt->dts << endl;
       try {
+         if(state != Playing) return;
          Stream* stream = streams[pkt->stream_index];
+         if(state != Playing) return;
          AVFrame* frame = stream->decode(pkt);
+         if(state != Playing) return;
          stream->broadcast(frame);
-      } catch(...) { cout << "Error in using stream in worker" << endl; }
+      } catch(...) { cout << "Error using stream in worker" << endl; }
       av_free_packet(pkt);
       //m.unlock();
       //TODO: Add waiting
