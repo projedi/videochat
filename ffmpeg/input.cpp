@@ -16,14 +16,14 @@ Input::Stream::Stream(MediaType type, AVCodecContext* codec, Input* owner) {
 }
 
 Input::Stream::~Stream() {
-   //cout << "Closing input stream" << endl;
+   cout << "Closing input stream" << endl;
    //subscribers.clear();
-   //if(codec) {
-      //cout << "Closing codec on input stream" << endl;
-      //avcodec_close(codec);
-      //cout << "Freeing codec on input stream" << endl;
-      //av_free(codec);
-   //}
+   if(codec) {
+      cout << "Closing codec on input stream" << endl;
+      avcodec_close(codec);
+      cout << "Freeing codec on input stream" << endl;
+      av_free(codec);
+   }
 }
 
 AVFrame* Input::Stream::decode(AVPacket* pkt) {
@@ -80,12 +80,13 @@ StreamInfo Input::Stream::info() {
 Input* Input::Stream::getOwner() { return owner; }
 
 Input::~Input() {
-   //cout << "Closing input" << endl;
-   //setState(Paused);
-   //workerFuture.waitForFinished();
-   //for(int i = 0; i < streams.count(); i++) {
-   //   if(streams[i]) delete streams[i];
-   //}
+   cout << "Closing input" << endl;
+   setState(Paused);
+   workerFuture.waitForFinished();
+   cout << "Worker down" << endl;
+   for(int i = 0; i < streams.count(); i++) {
+      if(streams[i]) delete streams[i];
+   }
 }
 
 QList<Input::Stream*> Input::getStreams() const { return streams; }
@@ -99,11 +100,19 @@ void Input::setState(Input::State state) {
    if(state == Playing) workerFuture = QtConcurrent::run(this,&Input::worker);
 }
 
+int callback(void* arg) {
+    Input::State state = ((InputGeneric*)arg)->getState();
+    //cout << "Callbacked with state=" << (int)state << endl;
+    return state == Input::Paused;
+}
+
 //TODO: provide a way to automagically determine the format
 InputGeneric::InputGeneric(QString fmt, QString file) {
    QByteArray formatName = fmt.toAscii();
    QByteArray fileName = file.toAscii();
    format = avformat_alloc_context();
+   format->interrupt_callback.callback = callback;
+   format->interrupt_callback.opaque = this;
    avformat_open_input(&format,fileName.data(),av_find_input_format(formatName.data()),0);
    //in win32 it must be commented for some reason
    //avformat_find_stream_info(format,0);
@@ -128,25 +137,38 @@ InputGeneric::~InputGeneric() {
    // TODO: for the same reason as in OutputGeneric
    // TODO: also check that delete nullifies pointer
    //for(int i = 0; i < streams.count(); i++) { if(streams[i]) delete streams[i]; }
-   avformat_close_input(&format);
+   //avformat_close_input(&format);
+    cout << "Closing generic input" << endl;
+   setState(Paused);
+   if (format->iformat && (format->iformat->read_close)) {
+       cout << "Found iformat on generic input" << endl;
+      format->iformat->read_close(format);
+   }
+   avio_close(format->pb);
+   cout << "Waiting for worker to go down" << endl;
+   workerFuture.waitForFinished();
+   cout << "Worker down with generic input" << endl;
+   avformat_free_context(format);
    //cout << "Waiting for the worker cycle to end" << endl;;
    //QMutexLocker l(&m);
    //state = Paused;
-   //cout << "Closing generic input" << endl;
+
 }
 
 void InputGeneric::worker() {
    //TODO: If lots of errors, then what?
    while(state != Paused) {
+       //cout << "Worker working" << endl;
       //m.lock();
       //if(state != Playing) return;
       AVPacket* pkt = new AVPacket();
       av_init_packet(pkt);
       //TODO: determine when negative number is an EOF
-      if(av_read_frame(format,pkt) < 0) continue;
+
       //if(state != Playing) return;
       //cout << "On in: pts=" << pkt->pts << ";dts=" << pkt->dts << endl;
       try {
+         if(av_read_frame(format,pkt) < 0) { cout << "Can't read frame" << endl; continue; }
          if(state != Playing) return;
          Stream* stream = streams[pkt->stream_index];
          if(state != Playing) return;
