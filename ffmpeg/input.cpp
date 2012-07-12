@@ -21,8 +21,8 @@ Input::Stream::~Stream() {
    if(codec) {
       cout << "Closing codec on input stream" << endl;
       avcodec_close(codec);
-      cout << "Freeing codec on input stream" << endl;
-      av_free(codec);
+      //cout << "Freeing codec on input stream" << endl;
+      //av_free(codec);
    }
 }
 
@@ -134,9 +134,6 @@ InputGeneric::InputGeneric(QString fmt, QString file) {
 }
 
 InputGeneric::~InputGeneric() {
-   // TODO: for the same reason as in OutputGeneric
-   // TODO: also check that delete nullifies pointer
-   //for(int i = 0; i < streams.count(); i++) { if(streams[i]) delete streams[i]; }
    //avformat_close_input(&format);
     cout << "Closing generic input" << endl;
    setState(Paused);
@@ -148,6 +145,12 @@ InputGeneric::~InputGeneric() {
    cout << "Waiting for worker to go down" << endl;
    workerFuture.waitForFinished();
    cout << "Worker down with generic input" << endl;
+
+   // TODO: for the same reason as in OutputGeneric
+   // TODO: also check that delete nullifies pointer
+   for(int i = 0; i < streams.count(); i++) { if(streams[i]) delete streams[i]; }
+   streams.clear();
+   cout << "Freeing context on input generic" << endl;
    avformat_free_context(format);
    //cout << "Waiting for the worker cycle to end" << endl;;
    //QMutexLocker l(&m);

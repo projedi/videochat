@@ -55,7 +55,7 @@ Output::Stream::Stream(StreamInfo info,AVCodec** encoder,Output* owner,int index
 Output::Stream::~Stream() {
    cout << "Closing output stream" << endl;
    if(codec) { cout << "removing codec in output stream" << endl;
-      avcodec_close(codec); av_free(codec);
+      avcodec_close(codec); //av_free(codec);
    }
    if(type == Video && scaler) { cout << "removing scaler" << endl;
       sws_freeContext(scaler);
@@ -148,11 +148,11 @@ OutputGeneric::~OutputGeneric() {
    // bluntly frees(without closing) codecs and i have to close each codec before doing
    // that.
    //TODO: make sure delete sets pointer to 0.
-   //for(int i = 0; i < streams.count(); i++) {
-   //   if(streams[i]) delete streams[i];
-   //   //streams[i] = 0;
-   //}
-   //streams.clear();
+   for(int i = 0; i < streams.count(); i++) {
+      if(streams[i]) delete streams[i];
+      //streams[i] = 0;
+   }
+   streams.clear();
    //cout << "Deleting format context on output generic" << endl;
    cout << "freeing context" << endl;
    avformat_free_context(format);
