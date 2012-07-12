@@ -24,6 +24,7 @@ Output::Stream* Player::addStream(StreamInfo info) {
 void Player::sendPacket(AVPacket* pkt) {
    //QMutexLocker l(&m);
    if(streams[pkt->stream_index]->info().type == Video) {
+      if(this->pkt) { av_free_packet(this->pkt); this->pkt=0; }
       this->pkt = pkt;
       update();
    }
@@ -35,5 +36,5 @@ void Player::paintEvent(QPaintEvent*) {
    QPainter painter(this);
    QImage image = QImage(pkt->data, this->width(), this->height(), QImage::Format_RGB32);
    painter.drawImage(QPointF(0,0),image);
-   av_free_packet(pkt);
+   //av_free_packet(pkt);
 }
