@@ -127,7 +127,7 @@ StreamInfo Output::Stream::info() {
    return info;
 }
 
-int Output::Stream::getIndex() { return index; }
+//int Output::Stream::getIndex() { return index; }
 
 AVCodecContext* Output::Stream::getCodec() { return codec; }
 

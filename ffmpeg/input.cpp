@@ -4,10 +4,9 @@
 #include <iostream>
 using namespace std;
 
-Input::Stream::Stream(MediaType type, AVCodecContext* codec, Input* owner) {
+Input::Stream::Stream(MediaType type, AVCodecContext* codec) {
    this->type = type;
    this->codec = codec;
-   this->owner = owner;
    pts = 0;
    if(type != Other) {
       AVCodec* decoder = avcodec_find_decoder(codec->codec_id);
@@ -83,8 +82,6 @@ StreamInfo Input::Stream::info() {
    return info;
 }
 
-Input* Input::Stream::getOwner() { return owner; }
-
 Input::~Input() {
    cout << "Closing input" << endl;
    setState(Paused);
@@ -126,13 +123,13 @@ InputGeneric::InputGeneric(QString fmt, QString file) {
       AVStream* avstream = format->streams[i];
       Stream* stream;
       if(avstream->codec->codec_type == AVMEDIA_TYPE_VIDEO) {
-         stream = new Stream(Video,avstream->codec,this);
+         stream = new Stream(Video,avstream->codec);
          streams.append(stream);
       } else if(avstream->codec->codec_type == AVMEDIA_TYPE_AUDIO) {
-         stream = new Stream(Audio,avstream->codec,this);
+         stream = new Stream(Audio,avstream->codec);
          streams.append(stream);
       } else {
-         stream = new Stream(Other,0,this);
+         stream = new Stream(Other,0);
          streams.append(stream);
       }
    }

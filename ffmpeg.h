@@ -47,7 +47,7 @@ public:
       ~Stream();
       void process(AVFrame*);
       StreamInfo info();
-      int getIndex();
+      //int getIndex();
       AVCodecContext* getCodec();
    private:
       //Returns 0 on fail
@@ -76,14 +76,14 @@ public:
    enum State { Playing, Paused };
    class Stream {
    public:
-      Stream(MediaType,AVCodecContext*,Input*);
+      Stream(MediaType,AVCodecContext*);
       ~Stream();
       void process(AVPacket*);
       void subscribe(Output::Stream*);
       void unsubscribe(Output::Stream*);
       QList<Output::Stream*> getSubscribers() const;
       StreamInfo info();
-      Input* getOwner();
+      //Input* getOwner();
    private:
       void broadcast(AVFrame*);
       AVFrame* decode(AVPacket*);
