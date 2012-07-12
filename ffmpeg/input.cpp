@@ -15,10 +15,10 @@ Input::Stream::Stream(MediaType type, AVCodecContext* codec) {
 }
 
 Input::Stream::~Stream() {
-   cout << "Closing input stream" << endl;
+   log("Closing input stream");
    //subscribers.clear();
    if(codec) {
-      cout << "Closing codec on input stream" << endl;
+      log("Closing codec on input stream");
       avcodec_close(codec);
       //cout << "Freeing codec on input stream" << endl;
       //av_free(codec);
@@ -48,7 +48,7 @@ void Input::Stream::broadcast(AVFrame* frame) {
          //AVPacket* pkt = subs->encode(frame);
          //subs->sendToOwner(pkt);
          subs->process(frame);
-      } catch(...) { cout << "Error broadcasting to a stream" << endl; continue; }
+      } catch(...) { log("Error broadcasting to a stream"); continue; }
    }
    av_free(frame);
 }
@@ -83,10 +83,10 @@ StreamInfo Input::Stream::info() {
 }
 
 Input::~Input() {
-   cout << "Closing input" << endl;
+   log("Closing input");
    setState(Paused);
    workerFuture.waitForFinished();
-   cout << "Worker down" << endl;
+   log("Worker down");
    for(int i = 0; i < streams.count(); i++) {
       if(streams[i]) delete streams[i];
    }
@@ -105,7 +105,6 @@ void Input::setState(Input::State state) {
 
 int callback(void* arg) {
     Input::State state = ((InputGeneric*)arg)->getState();
-    //cout << "Callbacked with state=" << (int)state << endl;
     return state == Input::Paused;
 }
 
@@ -137,54 +136,37 @@ InputGeneric::InputGeneric(QString fmt, QString file) {
 }
 
 InputGeneric::~InputGeneric() {
-   //avformat_close_input(&format);
-    cout << "Closing generic input" << endl;
+   log("Closing generic input");
    setState(Paused);
    if (format->iformat && (format->iformat->read_close)) {
-       cout << "Found iformat on generic input" << endl;
+      log("Found iformat on generic input");
       format->iformat->read_close(format);
    }
    avio_close(format->pb);
-   cout << "Waiting for worker to go down" << endl;
+   log("Waiting for worker to go down");
    workerFuture.waitForFinished();
-   cout << "Worker down with generic input" << endl;
+   log("Worker down with generic input");
 
    // TODO: for the same reason as in OutputGeneric
-   // TODO: also check that delete nullifies pointer
    for(int i = 0; i < streams.count(); i++) { if(streams[i]) delete streams[i]; }
    streams.clear();
-   cout << "Freeing context on input generic" << endl;
+   log("Freeing context on input generic");
    avformat_free_context(format);
-   //cout << "Waiting for the worker cycle to end" << endl;;
-   //QMutexLocker l(&m);
-   //state = Paused;
 
 }
 
 void InputGeneric::worker() {
    //TODO: If lots of errors, then what?
    while(state != Paused) {
-       //cout << "Worker working" << endl;
-      //m.lock();
-      //if(state != Playing) return;
       AVPacket* pkt = new AVPacket();
       av_init_packet(pkt);
-      //TODO: determine when negative number is an EOF
-
-      //if(state != Playing) return;
       //cout << "On in: pts=" << pkt->pts << ";dts=" << pkt->dts << endl;
       try {
-         if(av_read_frame(format,pkt) < 0) { cout << "Can't read frame" << endl; continue; }
+         //TODO: determine when negative number is an EOF
+         if(av_read_frame(format,pkt) < 0) { log("Can't read frame"); continue; }
          if(state != Playing) return;
-         //Stream* stream = streams[pkt->stream_index];
-         //if(state != Playing) return;
-         //AVFrame* frame = stream->decode(pkt);
-         //if(state != Playing) return;
-         //stream->broadcast(frame);
          streams[pkt->stream_index]->process(pkt);
-      } catch(...) { cout << "Error using stream in worker" << endl; }
+      } catch(...) { log("Error using stream in worker"); }
       av_free_packet(pkt);
-      //m.unlock();
-      //TODO: Add waiting
    }
 }

@@ -6,7 +6,7 @@ using namespace std;
 Player::Player(QWidget* parent): QWidget(parent) { pkt = 0; }
 
 Player::~Player() {
-   cout << "Closing player" << endl;
+   log("Closing player");
    if(pkt) av_free_packet(pkt);
 }
 
@@ -22,7 +22,6 @@ Output::Stream* Player::addStream(StreamInfo info) {
 }
 
 void Player::sendPacket(AVPacket* pkt) {
-   //QMutexLocker l(&m);
    if(streams[pkt->stream_index]->info().type == Video) {
       if(this->pkt) { av_free_packet(this->pkt); this->pkt=0; }
       this->pkt = pkt;
@@ -31,10 +30,8 @@ void Player::sendPacket(AVPacket* pkt) {
 }
 
 void Player::paintEvent(QPaintEvent*) {
-   //QMutexLocker l(&m);
    if(!pkt) return;
    QPainter painter(this);
    QImage image = QImage(pkt->data, this->width(), this->height(), QImage::Format_RGB32);
    painter.drawImage(QPointF(0,0),image);
-   //av_free_packet(pkt);
 }

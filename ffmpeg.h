@@ -11,6 +11,7 @@ extern "C" {
 
 #include <QMutexLocker>
 #include <QFuture>
+#include "logging.h"
 
 //#include <iostream>
 //using namespace std;

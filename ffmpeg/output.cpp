@@ -54,14 +54,14 @@ Output::Stream::Stream(StreamInfo info,AVCodec** encoder,Output* owner,int index
 
 //TODO: Check if here something leaks
 Output::Stream::~Stream() {
-   cout << "Closing output stream" << endl;
-   if(codec) { cout << "removing codec in output stream" << endl;
+   log("Closing output stream");
+   if(codec) { log("removing codec in output stream");
       avcodec_close(codec); //av_free(codec);
    }
-   if(type == Video && scaler) { cout << "removing scaler" << endl;
+   if(type == Video && scaler) { log("removing scaler");
       sws_freeContext(scaler);
    } //else if(type == Audio && resampler) swr_freeContext(&resampler);
-   cout << "Closed output stream" << endl;
+   log("Closed output stream");
 }
 
 AVPacket* Output::Stream::encode(AVFrame* frame) {
@@ -84,12 +84,11 @@ AVPacket* Output::Stream::encode(AVFrame* frame) {
       //TODO: not so sure
       newFrame->pts=frame->pts;
       //cout << "On frame: pts=" << frame->pts << endl;
-      //av_free(frame);
       res = avcodec_encode_video2(codec, pkt, newFrame, &got_packet);
    } else if(type == Audio) {
       //TODO: Implement
    }
-   if(res < 0) { cout << "Couldn't encode" << endl; pkt = 0; }
+   if(res < 0) { log("Couldn't encode"); pkt = 0; }
    if(!res) {
       if(!got_packet) { av_free_packet(pkt); pkt = 0; }
       else {
@@ -127,12 +126,9 @@ StreamInfo Output::Stream::info() {
    return info;
 }
 
-//int Output::Stream::getIndex() { return index; }
-
 AVCodecContext* Output::Stream::getCodec() { return codec; }
 
 Output::~Output() {
-   //cout << "Original output destructor" << endl;
    for(int i = 0; i < streams.count(); i++) { if(streams[i]) delete streams[i]; }
 }
 
@@ -148,19 +144,14 @@ OutputGeneric::OutputGeneric(QString fmt, QString file) {
 
 OutputGeneric::~OutputGeneric() {
    av_write_trailer(format);
-   cout << "Closing file" << endl;
+   log("Closing file");
    avio_close(format->pb);
    // It seems like duplication from supertype destructor. But avformat_free_context
    // bluntly frees(without closing) codecs and i have to close each codec before doing
    // that.
-   //TODO: make sure delete sets pointer to 0.
-   for(int i = 0; i < streams.count(); i++) {
-      if(streams[i]) delete streams[i];
-      //streams[i] = 0;
-   }
+   for(int i = 0; i < streams.count(); i++) { if(streams[i]) delete streams[i]; }
    streams.clear();
-   //cout << "Deleting format context on output generic" << endl;
-   cout << "freeing context" << endl;
+   log("freeing context");
    avformat_free_context(format);
 }
 
@@ -186,8 +177,5 @@ Output::Stream* OutputGeneric::addStream(StreamInfo info) {
 void OutputGeneric::sendPacket(AVPacket* pkt) {
    //cout << "On out: pts=" << pkt->pts << ";dts=" << pkt->dts << endl;
    av_interleaved_write_frame(format,pkt);
-   //if(pkt->flags & AV_PKT_FLAG_KEY)
-   // avformat_write_header(format,0);
-   //av_write_frame(format,pkt);
    av_free_packet(pkt);
 }
