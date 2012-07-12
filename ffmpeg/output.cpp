@@ -13,6 +13,7 @@ Output::Stream::Stream(StreamInfo info,AVCodec** encoder,Output* owner,int index
       CodecID codec_id = (type==Video) ? CODEC_ID_H264
                        : (type==Audio) ? CODEC_ID_MP2
                        : CODEC_ID_NONE;
+      //TODO: what will it do when CODEC_ID_NONE
       *encoder = avcodec_find_encoder(codec_id);
    }
    if(*encoder) {
@@ -102,6 +103,11 @@ AVPacket* Output::Stream::encode(AVFrame* frame) {
 }
 
 void Output::Stream::sendToOwner(AVPacket* pkt) { if(pkt) owner->sendPacket(pkt); }
+
+void Output::Stream::process(AVFrame* frame) {
+   AVPacket* pkt = encode(frame);
+   sendToOwner(pkt);
+}
 
 StreamInfo Output::Stream::info() {
    StreamInfo info;

@@ -45,13 +45,14 @@ public:
       //Throws 1 if can't associate codec context with encoder
       Stream(StreamInfo,AVCodec** encoder,Output* owner,int index) throw(int);
       ~Stream();
-      //Returns 0 on fail
-      AVPacket* encode(AVFrame*);
-      void sendToOwner(AVPacket*);
+      void process(AVFrame*);
       StreamInfo info();
       int getIndex();
       AVCodecContext* getCodec();
    private:
+      //Returns 0 on fail
+      AVPacket* encode(AVFrame*);
+      void sendToOwner(AVPacket*);
       MediaType type;
       union {
          SwsContext* scaler;
@@ -77,14 +78,15 @@ public:
    public:
       Stream(MediaType,AVCodecContext*,Input*);
       ~Stream();
-      AVFrame* decode(AVPacket*);
-      void broadcast(AVFrame*);
+      void process(AVPacket*);
       void subscribe(Output::Stream*);
       void unsubscribe(Output::Stream*);
       QList<Output::Stream*> getSubscribers() const;
       StreamInfo info();
       Input* getOwner();
    private:
+      void broadcast(AVFrame*);
+      AVFrame* decode(AVPacket*);
       MediaType type;
       AVCodecContext* codec;
       QList<Output::Stream*> subscribers;

@@ -46,11 +46,17 @@ void Input::Stream::broadcast(AVFrame* frame) {
    for(int i = 0; i < subscribers.count(); i++) {
       Output::Stream* subs = subscribers[i];
       try {
-         AVPacket* pkt = subs->encode(frame);
-         subs->sendToOwner(pkt);
+         //AVPacket* pkt = subs->encode(frame);
+         //subs->sendToOwner(pkt);
+         subs->process(frame);
       } catch(...) { cout << "Error broadcasting to a stream" << endl; continue; }
    }
    av_free(frame);
+}
+
+void Input::Stream::process(AVPacket* pkt) {
+   AVFrame* frame = decode(pkt);
+   broadcast(frame);
 }
 
 void Input::Stream::subscribe(Output::Stream* client) { subscribers.append(client); }
@@ -173,11 +179,12 @@ void InputGeneric::worker() {
       try {
          if(av_read_frame(format,pkt) < 0) { cout << "Can't read frame" << endl; continue; }
          if(state != Playing) return;
-         Stream* stream = streams[pkt->stream_index];
-         if(state != Playing) return;
-         AVFrame* frame = stream->decode(pkt);
-         if(state != Playing) return;
-         stream->broadcast(frame);
+         //Stream* stream = streams[pkt->stream_index];
+         //if(state != Playing) return;
+         //AVFrame* frame = stream->decode(pkt);
+         //if(state != Playing) return;
+         //stream->broadcast(frame);
+         streams[pkt->stream_index]->process(pkt);
       } catch(...) { cout << "Error using stream in worker" << endl; }
       av_free_packet(pkt);
       //m.unlock();
