@@ -3,6 +3,7 @@
 #include "ffmpeg.h"
 #include <QPainter>
 #include <QWidget>
+#include <QTimer>
 
 class Player: public Output, public QWidget {
 public:
@@ -14,4 +15,6 @@ protected:
    void paintEvent(QPaintEvent*);
 private:
    AVPacket* pkt;
+   QTimer t;
+   QMutex m;
 };

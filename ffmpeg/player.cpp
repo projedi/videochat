@@ -3,7 +3,11 @@
 #include <iostream>
 using namespace std;
 
-Player::Player(QWidget* parent): QWidget(parent) { pkt = 0; }
+Player::Player(QWidget* parent): QWidget(parent) {
+   connect(&t,SIGNAL(timeout()),this,SLOT(repaint()));
+   t.start(40);
+   pkt = 0;
+}
 
 Player::~Player() {
    logger("Closing player");
@@ -22,16 +26,32 @@ Output::Stream* Player::addStream(StreamInfo info) {
 }
 
 void Player::sendPacket(AVPacket* pkt) {
+   logger("Sending packet");
    if(streams[pkt->stream_index]->info().type == Video) {
-      if(this->pkt) { av_free_packet(this->pkt); this->pkt=0; }
+      logger("Sending video packet");
+      m.lock();
+      logger("locking for sendPacket");
+      if(this->pkt) { logger("Clearing current packet"); av_free_packet(this->pkt); this->pkt=0; }
       this->pkt = pkt;
-      update();
+      //logger("Making it paint");
+      m.unlock();
+      logger("sendPacket unlocking");
+      //repaint();
+      //update();
+      //logger("Made it paint");
    }
 }
 
 void Player::paintEvent(QPaintEvent*) {
-   if(!pkt) return;
+   m.lock();
+   logger("paintEvent locking");
+   if(!pkt) { logger("Not really painting"); m.unlock(); return; }
+   logger("Painting for real");
    QPainter painter(this);
+   logger( "For " + QString::number(this->width()) + "x" + QString::number(this->height())
+         + " I get packet with length " + QString::number(pkt->size));
    QImage image = QImage(pkt->data, this->width(), this->height(), QImage::Format_RGB32);
    painter.drawImage(QPointF(0,0),image);
+   m.unlock();
+   logger("paintEvent unlocking");
 }
