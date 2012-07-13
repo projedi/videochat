@@ -38,9 +38,9 @@ Output::Stream::Stream(StreamInfo info,AVCodec** encoder,Output* owner,int index
          codec->time_base.num = 1;
          codec->time_base.den = info.video.fps;
          //TODO: move to settings
-         codec->gop_size = 13;
+         codec->gop_size = 5;
 #ifdef LINUX
-         codec->bit_rate = 160000;
+         codec->bit_rate = 500000;
 #endif
       } else {
          //TODO: implement correctly

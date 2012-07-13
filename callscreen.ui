@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>636</width>
-    <height>421</height>
+    <width>829</width>
+    <height>499</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -90,15 +90,15 @@ radius: 1.35, stop: 0 #fff, stop: 1 #ccc);
     <rect>
      <x>10</x>
      <y>10</y>
-     <width>451</width>
-     <height>401</height>
+     <width>640</width>
+     <height>480</height>
     </rect>
    </property>
   </widget>
   <widget class="Player" name="playerLocal" native="true">
    <property name="geometry">
     <rect>
-     <x>470</x>
+     <x>660</x>
      <y>10</y>
      <width>151</width>
      <height>111</height>
@@ -108,8 +108,8 @@ radius: 1.35, stop: 0 #fff, stop: 1 #ccc);
   <widget class="QPushButton" name="buttonEndCall">
    <property name="geometry">
     <rect>
-     <x>530</x>
-     <y>390</y>
+     <x>720</x>
+     <y>470</y>
      <width>101</width>
      <height>25</height>
     </rect>
@@ -142,7 +142,7 @@ radius: 1.35, stop: 0 #f00, stop: 1 #c00);
   <widget class="QComboBox" name="comboCamera">
    <property name="geometry">
     <rect>
-     <x>470</x>
+     <x>660</x>
      <y>150</y>
      <width>161</width>
      <height>22</height>
@@ -152,7 +152,7 @@ radius: 1.35, stop: 0 #f00, stop: 1 #c00);
   <widget class="QLabel" name="label">
    <property name="geometry">
     <rect>
-     <x>470</x>
+     <x>660</x>
      <y>130</y>
      <width>61</width>
      <height>14</height>
@@ -165,7 +165,7 @@ radius: 1.35, stop: 0 #f00, stop: 1 #c00);
   <widget class="QLabel" name="label_2">
    <property name="geometry">
     <rect>
-     <x>470</x>
+     <x>660</x>
      <y>180</y>
      <width>81</width>
      <height>16</height>
@@ -178,7 +178,7 @@ radius: 1.35, stop: 0 #f00, stop: 1 #c00);
   <widget class="QComboBox" name="comboMicrophone">
    <property name="geometry">
     <rect>
-     <x>470</x>
+     <x>660</x>
      <y>200</y>
      <width>161</width>
      <height>22</height>
