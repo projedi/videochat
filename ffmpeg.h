@@ -67,6 +67,7 @@ public:
    virtual ~Output();
    QList<Stream*> getStreams() const;
    virtual Stream* addStream(StreamInfo) = 0;
+   virtual void removeStream(Stream*) = 0;
    virtual void sendPacket(AVPacket*) = 0;
 protected:
    QList<Stream*> streams;
@@ -125,6 +126,7 @@ public:
    OutputGeneric(QString fmt, QString file);
    ~OutputGeneric();
    Stream* addStream(StreamInfo);
+   void removeStream(Stream*);
    void sendPacket(AVPacket*);
 private:
    AVFormatContext* format;

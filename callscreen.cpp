@@ -21,6 +21,9 @@ CallScreen::CallScreen( QString contactName, QString remoteURI, QString localURI
    int camIndex = ui->comboCamera->currentIndex();
    int micIndex = ui->comboMicrophone->currentIndex();
 
+   camera = 0;
+   microphone = 0;
+   remote = 0;
    server = new OutputGeneric("mpegts", remoteURI);
    QtConcurrent::run(this,&CallScreen::setupCamera,camIndex);
    QtConcurrent::run(this,&CallScreen::setupMicrophone,micIndex);
@@ -36,6 +39,7 @@ void CallScreen::setupCamera(int camIndex) {
       server->removeStream(playerLocalVideoStream);
       playerLocalVideoStream = 0;
    }
+   if(camera) delete camera;
    Input::Stream *cameraStream = 0;
    try {
       camera = new InputGeneric( cameras.getFormats()[camIndex]
@@ -55,7 +59,7 @@ void CallScreen::setupCamera(int camIndex) {
 }
 
 void CallScreen::setupMicrophone(int micIndex) {
-   microphone = 0;
+   if(microphone) delete microphone;
 }
 
 void CallScreen::setupRemote(QString localURI) {
@@ -63,6 +67,7 @@ void CallScreen::setupRemote(QString localURI) {
       server->removeStream(playerRemoteVideoStream);
       playerRemoteVideoStream = 0;
    }
+   if(remote) delete remote;
    Input::Stream *remoteVideoStream = 0;
    try {
       remote = new InputGeneric("mpegts", localURI);

@@ -174,6 +174,29 @@ Output::Stream* OutputGeneric::addStream(StreamInfo info) {
    } catch(...) { return 0; }
 }
 
+void OutputGeneric::removeStream(Output::Stream* stream) {
+   int str_index = streams.indexOf(stream);
+   streams.removeAt(str_index);
+   delete stream;
+   AVStream* avstream = format->streams[str_index];
+   format->nb_streams--;
+   for(int i = str_index; i < format->nb_streams; i++) {
+      format->streams[i] = format->streams[i+1];
+   }
+   avformat_write_header(format,0);
+
+   if(avstream->parser) av_parser_close(avstream->parser);
+   if(avstream->attached_pic.data) av_free_packet(&avstream->attached_pic);
+   av_dict_free(&avstream->metadata);
+   av_freep(&avstream->index_entries);
+   av_freep(&avstream->codec->extradata);
+   av_freep(&avstream->codec->subtitle_header);
+   av_freep(&avstream->codec);
+   av_freep(&avstream->priv_data);
+   av_freep(&avstream->info);
+   av_freep(&avstream);
+}
+
 void OutputGeneric::sendPacket(AVPacket* pkt) {
    //cout << "On out: pts=" << pkt->pts << ";dts=" << pkt->dts << endl;
    av_interleaved_write_frame(format,pkt);
