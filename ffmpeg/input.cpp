@@ -164,7 +164,7 @@ void InputGeneric::worker() {
       try {
          //TODO: determine when negative number is an EOF
          if(av_read_frame(format,pkt) < 0) { logger("Can't read frame"); continue; }
-         if(state != Playing) return;
+         if(state != Playing) { logger("read(?) frame but the pause was signaled"); av_free_packet(pkt); break; }
          streams[pkt->stream_index]->process(pkt);
       } catch(...) { logger("Error using stream in worker"); }
       av_free_packet(pkt);

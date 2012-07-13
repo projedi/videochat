@@ -1,3 +1,4 @@
+#include "logging.h"
 #include "callresponse.h"
 #include "ui_callresponse.h"
 #include <QHostAddress>
@@ -29,11 +30,9 @@ void CallResponse::acceptCall() {
    state = 2;
    socket->write("ACCEPT 8080",11);
    socket->flush();
-   cout << "Wrote acceptance" << endl;
 }
 
 void CallResponse::rejectCall() {
-   cout << "Rejecting call" << endl;
    socket->disconnectFromHost();
    reject();
 }
@@ -42,21 +41,17 @@ void CallResponse::discuss() {
    char buffer[51];
    if(state == 0) {
       state = 1;
-      cout << "Getting ready to read the first time" << endl;
       int len = socket->read(buffer,50);
       if(len < 0) rejectCall();
       buffer[len] = 0;
-      cout << "read data " << len << " long: " << buffer << endl;
       QString init(buffer);
       if(!init.startsWith("VIDEOCHAT")) rejectCall();
       return;
    } else if(state == 2) {
       state = 3;
-      cout << "Getting ready to read after accepting call" << endl;
       int len = socket->read(buffer,50);
       if(len < 0) rejectCall();
       buffer[len] = 0;
-      cout << "read data " << len << " long: " << buffer << endl;
       QString localPort = "8080";
       QString remotePort(buffer);
       localURI = "udp://" + socket->localAddress().toString() + ":" + localPort;
@@ -64,7 +59,6 @@ void CallResponse::discuss() {
       accept();
       return;
    }
-   cout << "Missing with data" << endl;
 }
 
 void CallResponse::onSocketError(QAbstractSocket::SocketError err) {

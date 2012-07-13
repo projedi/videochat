@@ -16,25 +16,20 @@ CallScreen::CallScreen( QString contactName, QString remoteURI, QString localURI
    AudioHardware microphones;
    ui->comboCamera->addItems(cameras.getNames());
    ui->comboMicrophone->addItems(microphones.getNames());
-   cout << "Added default cameras/microphones" << endl;
    int camIndex = ui->comboCamera->currentIndex();
    int micIndex = ui->comboMicrophone->currentIndex();
 
-   cout << "Setting up camera" << endl;
    camera = new InputGeneric( cameras.getFormats()[camIndex]
                             , cameras.getFiles()[camIndex]);
    camera->setState(Input::Playing);
    Input::Stream *cameraStream = camera->getStreams()[0];
 
-   cout << "Setting up microphone(dummy)" << endl;
    microphone = 0;
 
-   cout << "Setting up server to " << remoteURI.toAscii().data() << endl;
    server = new OutputGeneric("mpegts", remoteURI);
    Output::Stream *serverVideoStream = server->addStream(cameraStream->info());
    cameraStream->subscribe(serverVideoStream);
 
-   cout << "Setting up remote to " << localURI.toAscii().data() << endl;
    remote = new InputGeneric("mpegts", localURI);
    remote->setState(Input::Playing);
    Input::Stream *remoteVideoStream = remote->getStreams()[0];
@@ -48,21 +43,19 @@ CallScreen::CallScreen( QString contactName, QString remoteURI, QString localURI
 CallScreen::~CallScreen() {
    camera->setState(Input::Paused);
    remote->setState(Input::Paused);
-   cout << "Deleting remote" << endl;
+   logger("Deleting remote");
    delete remote;
-   cout << "Deleting camera" << endl;
+   logger("Deleting camera");
    delete camera;
-   cout << "Deleting ui on the call screen" << endl;
+   logger("Deleting ui on the call screen");
    delete ui;
-   cout << "Deleting server" << endl;
+   logger("Deleting server");
    delete server;
-   cout << "Deleting microphone if exists" << endl;
+   logger("Deleting microphone if exists");
    if(microphone) delete microphone;
-   cout << "CallScreen deleted" << endl;
 }
 
 void CallScreen::rejectCall() {
-   cout << "Ending call" << endl;
    socket->disconnectFromHost();
    close();
 }

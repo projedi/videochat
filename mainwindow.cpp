@@ -1,3 +1,4 @@
+#include "logging.h"
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "callrequest.h"
@@ -25,7 +26,6 @@ void MainWindow::startCall() {
    CallRequest req(contactName);
    QAbstractSocket* socket = req.getSocket();
    if(req.exec() == (int)QDialog::Accepted) {
-      cout << "Starting the show" << endl;
       CallScreen cs(req.getRemoteURI(),req.getRemoteURI(),req.getLocalURI(),socket,this);
       cs.exec();
    }
@@ -33,16 +33,14 @@ void MainWindow::startCall() {
 }
 
 void MainWindow::handleCall() {
-   cout << "Someone called me" << endl;
    QAbstractSocket* socket = server.nextPendingConnection();
    try {
       CallResponse resp(socket,this);
       if(resp.exec() == (int)QDialog::Accepted) {
-         cout << "Starting the show" << endl;
          CallScreen cs(resp.getRemoteURI(),resp.getRemoteURI()
                       ,resp.getLocalURI(),socket,this);
          cs.exec();
       }
-   } catch(...) { cout << "Bogus call" << endl; }
+   } catch(...) { logger("Bogus call"); }
    delete socket;
 }

@@ -1,3 +1,4 @@
+#include "logging.h"
 #include "callrequest.h"
 #include "ui_callrequest.h"
 #include <QHostAddress>
@@ -6,7 +7,6 @@ using namespace std;
 
 CallRequest::CallRequest(QString contactName, QWidget *parent): QDialog(parent)
                                                               , ui(new Ui::CallRequest) {
-   cout << "Starting request" << endl;
    ui->setupUi(this);
    ui->labelContact->setText("Contacting " + contactName);
    setWindowTitle(ui->labelContact->text());
@@ -38,21 +38,17 @@ void CallRequest::discuss() {
       state = 1;
       socket->write("VIDEOCHAT",9);
       socket->flush();
-      cout << "wrote conversation starter" << endl;
       return;
    } else if(state == 1) {
       state = 2;
       int len = socket->read(buffer,50);
       if(len < 0) rejectCall();
       buffer[len] = 0;
-      cout << "read some data of length " << len << " and here it is: " << buffer << endl;
       QString reply(buffer);
       if(reply.startsWith("ACCEPT ")) {
          reply.remove(0,7);
-         cout << "extracting port: " << reply.toAscii().data() << endl;
          socket->write("8081",4);
          socket->flush();
-         cout << "wrote my port: 8081" << endl;
          QString localPort = "8081";
          remoteURI = "udp://" + socket->peerAddress().toString() + ":" + reply;
          localURI = "udp://" + socket->localAddress().toString() + ":" + localPort;
