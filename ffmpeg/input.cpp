@@ -141,12 +141,16 @@ InputGeneric::InputGeneric(QString fmt, QString file) {
 InputGeneric::~InputGeneric() {
    logger(fmt + ":Closing generic input");
    setState(Paused);
+   closingMutex.lock();
+   logger(fmt + ":Locking closingMutex in destructor");
    if (format->iformat && (format->iformat->read_close)) {
       logger(fmt + ":Found iformat on generic input");
       format->iformat->read_close(format);
    }
    avio_close(format->pb);
-   logger(fmt + ":Waiting for worker to go down");
+   closingMutex.unlock();
+   logger(fmt + ":Unlocking closingMutex in destructor");
+   //logger(fmt + ":Waiting for worker to go down");
    workerFuture.waitForFinished();
    logger(fmt + ":Worker down with generic input");
 
@@ -166,11 +170,15 @@ void InputGeneric::worker() {
       av_init_packet(pkt);
       //cout << "On in: pts=" << pkt->pts << ";dts=" << pkt->dts << endl;
       logger(fmt + ":Getting ready to read the frame");
+      closingMutex.lock();
+      logger(fmt + ":Locking closingMutex in worker");
       //TODO: determine when negative number is an EOF
       if(av_read_frame(format,pkt) < 0) { logger(fmt + ":Can't read frame"); continue; }
       logger(fmt + ":Read the frame");
+      closingMutex.unlock();
+      logger(fmt + ":Unlocking closingMutex in worker");
       if(state != Playing) {
-         logger(fmt + ":read(?) frame but the pause was signaled");
+         logger(fmt + ":Read(?) frame but the pause was signaled");
          av_free_packet(pkt);
          break;
       }
