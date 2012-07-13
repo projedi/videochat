@@ -77,7 +77,7 @@ public:
    enum State { Playing, Paused };
    class Stream {
    public:
-      Stream(MediaType,AVCodecContext*);
+      Stream(AVStream*) throw(int);
       ~Stream();
       void process(AVPacket*);
       void subscribe(Output::Stream*);
@@ -110,7 +110,7 @@ protected:
 
 class InputGeneric: public Input {
 public:
-   InputGeneric(QString fmt, QString file);
+   InputGeneric(QString fmt, QString file) throw(int);
    ~InputGeneric();
 private:
    QMutex closingMutex;

@@ -4,13 +4,20 @@
 #include <iostream>
 using namespace std;
 
-Input::Stream::Stream(MediaType type, AVCodecContext* codec) {
-   this->type = type;
-   this->codec = codec;
+Input::Stream::Stream(AVStream* avstream) throw(int) {
+   if(avstream->codec->codec_type == AVMEDIA_TYPE_VIDEO) {
+      type = Video;
+   } else if(avstream->codec->codec_type == AVMEDIA_TYPE_AUDIO) {
+      type = Audio;
+   } else {
+      type = Other;
+   }
+
+   codec = avstream->codec;
    pts = 0;
    if(type != Other) {
       AVCodec* decoder = avcodec_find_decoder(codec->codec_id);
-      avcodec_open2(codec,decoder,0);
+      if(avcodec_open2(codec,decoder,0)<0) throw 1;
    }
 }
 
@@ -111,28 +118,20 @@ int callback(void* arg) {
 }
 
 //TODO: provide a way to automagically determine the format
-InputGeneric::InputGeneric(QString fmt, QString file) {
-   QByteArray formatName = fmt.toAscii();
-   QByteArray fileName = file.toAscii();
+InputGeneric::InputGeneric(QString fmt, QString file) throw(int) {
+   QByteArray formatN = fmt.toAscii();
+   QByteArray fileN = file.toAscii();
    format = avformat_alloc_context();
    format->interrupt_callback.callback = callback;
    format->interrupt_callback.opaque = this;
-   avformat_open_input(&format,fileName.data(),av_find_input_format(formatName.data()),0);
+   if(avformat_open_input( &format, fileN.data(), av_find_input_format(formatN.data()), 0)<0)
+      throw 1;
    //in win32 it must be commented for some reason
    //avformat_find_stream_info(format,0);
    for(int i = 0; i < format->nb_streams; i++) {
-      AVStream* avstream = format->streams[i];
-      Stream* stream;
-      if(avstream->codec->codec_type == AVMEDIA_TYPE_VIDEO) {
-         stream = new Stream(Video,avstream->codec);
-         streams.append(stream);
-      } else if(avstream->codec->codec_type == AVMEDIA_TYPE_AUDIO) {
-         stream = new Stream(Audio,avstream->codec);
-         streams.append(stream);
-      } else {
-         stream = new Stream(Other,0);
-         streams.append(stream);
-      }
+      try {
+         streams.append(new Stream(format->streams[i]));
+      } catch(...) { logger(fmt + ":Error creating stream"); }
    }
    state = Paused;
    this->fmt = fmt;

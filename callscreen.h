@@ -18,6 +18,7 @@ private slots:
    void rejectCall();
    void onSocketError(QAbstractSocket::SocketError);
 private:
+   void init(QString localURI, QString remoteURI);
    Ui::CallScreen *ui;
    Input *remote, *camera, *microphone;
    Output *server;

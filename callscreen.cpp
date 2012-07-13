@@ -4,7 +4,8 @@
 using namespace std;
 
 //TODO: Add microphone into the play
-CallScreen::CallScreen( QString contactName, QString remoteURI, QString localURI , QAbstractSocket* socket, QWidget *parent): QDialog(parent)
+CallScreen::CallScreen( QString contactName, QString remoteURI, QString localURI 
+                      , QAbstractSocket* socket, QWidget *parent): QDialog(parent)
                                                                  , ui(new Ui::CallScreen) {
    this->socket = socket;
    connect(socket,SIGNAL(error(QAbstractSocket::SocketError))
@@ -12,6 +13,10 @@ CallScreen::CallScreen( QString contactName, QString remoteURI, QString localURI
    ui->setupUi(this);
    connect(ui->buttonEndCall,SIGNAL(clicked()),SLOT(rejectCall()));
    setWindowTitle("Conversation with " + contactName);
+   QtConcurrent::run(this,&CallScreen::init,localURI,remoteURI);
+}
+
+void CallScreen::init(QString localURI, QString remoteURI) {
    VideoHardware cameras;
    AudioHardware microphones;
    ui->comboCamera->addItems(cameras.getNames());
@@ -19,25 +24,42 @@ CallScreen::CallScreen( QString contactName, QString remoteURI, QString localURI
    int camIndex = ui->comboCamera->currentIndex();
    int micIndex = ui->comboMicrophone->currentIndex();
 
-   camera = new InputGeneric( cameras.getFormats()[camIndex]
-                            , cameras.getFiles()[camIndex]);
-   camera->setState(Input::Playing);
-   Input::Stream *cameraStream = camera->getStreams()[0];
+   Input::Stream *cameraStream = 0;
+   Output::Stream *serverVideoStream = 0;
+   Input::Stream *remoteVideoStream = 0;
+   Output::Stream *playerLocalVideoStream = 0;
+   Output::Stream *playerRemoteVideoStream = 0;
+   try {
+      camera = new InputGeneric( cameras.getFormats()[camIndex]
+                               , cameras.getFiles()[camIndex]);
+      camera->setState(Input::Playing);
+      if(camera->getStreams().count() < 1) logger("Camera doesn't have streams");
+      else cameraStream  = camera->getStreams()[0];
+   } catch(...) { logger("Can't open camera"); camera = 0; }
 
    microphone = 0;
 
    server = new OutputGeneric("mpegts", remoteURI);
-   Output::Stream *serverVideoStream = server->addStream(cameraStream->info());
-   cameraStream->subscribe(serverVideoStream);
+   if(cameraStream) {
+      serverVideoStream = server->addStream(cameraStream->info());
+      cameraStream->subscribe(serverVideoStream);
+   }
 
-   remote = new InputGeneric("mpegts", localURI);
-   remote->setState(Input::Playing);
-   Input::Stream *remoteVideoStream = remote->getStreams()[0];
+   try {
+      remote = new InputGeneric("mpegts", localURI);
+      remote->setState(Input::Playing);
+      if(remote->getStreams().count() < 1) logger("Remote doesn't have streams");
+      else remoteVideoStream = remote->getStreams()[0];
+   } catch(...) { logger("Can't open remote"); remote = 0; }
 
-   Output::Stream *playerLocalVideoStream = ui->playerLocal->addStream(cameraStream->info());
-   Output::Stream *playerRemoteVideoStream = ui->playerRemote->addStream(remoteVideoStream->info());
-   cameraStream->subscribe(playerLocalVideoStream);
-   remoteVideoStream->subscribe(playerRemoteVideoStream);
+   if(cameraStream) {
+      playerLocalVideoStream = ui->playerLocal->addStream(cameraStream->info());
+      cameraStream->subscribe(playerLocalVideoStream);
+   }
+   if(remoteVideoStream) {
+      playerRemoteVideoStream = ui->playerRemote->addStream(remoteVideoStream->info());
+      remoteVideoStream->subscribe(playerRemoteVideoStream);
+   }
 }
 
 CallScreen::~CallScreen() {
