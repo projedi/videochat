@@ -98,6 +98,8 @@ Input::State Input::getState() { return state; }
 
 void Input::setState(Input::State state) {
    QMutexLocker l(&m);
+   logger( fmt + ":Setting state from " + QString::number((int)this->state)
+         + " to " + QString::number((int)state));
    if(state == this->state) return;
    this->state = state;
    if(state == Playing) workerFuture = QtConcurrent::run(this,&Input::worker);
@@ -133,24 +135,25 @@ InputGeneric::InputGeneric(QString fmt, QString file) {
       }
    }
    state = Paused;
+   this->fmt = fmt;
 }
 
 InputGeneric::~InputGeneric() {
-   logger("Closing generic input");
+   logger(fmt + ":Closing generic input");
    setState(Paused);
    if (format->iformat && (format->iformat->read_close)) {
-      logger("Found iformat on generic input");
+      logger(fmt + ":Found iformat on generic input");
       format->iformat->read_close(format);
    }
    avio_close(format->pb);
-   logger("Waiting for worker to go down");
+   logger(fmt + ":Waiting for worker to go down");
    workerFuture.waitForFinished();
-   logger("Worker down with generic input");
+   logger(fmt + ":Worker down with generic input");
 
    // TODO: for the same reason as in OutputGeneric
    for(int i = 0; i < streams.count(); i++) { if(streams[i]) delete streams[i]; }
    streams.clear();
-   logger("Freeing context on input generic");
+   logger(fmt + ":Freeing context on input generic");
    avformat_free_context(format);
 
 }
@@ -158,16 +161,16 @@ InputGeneric::~InputGeneric() {
 void InputGeneric::worker() {
    //TODO: If lots of errors, then what?
    while(state != Paused) {
-      logger("Worker is working and whatnot");
+      logger(fmt + ":Worker is working and whatnot");
       AVPacket* pkt = new AVPacket();
       av_init_packet(pkt);
       //cout << "On in: pts=" << pkt->pts << ";dts=" << pkt->dts << endl;
-      logger("Getting ready to read the frame");
+      logger(fmt + ":Getting ready to read the frame");
       //TODO: determine when negative number is an EOF
-      if(av_read_frame(format,pkt) < 0) { logger("Can't read frame"); continue; }
-      logger("Read the frame");
+      if(av_read_frame(format,pkt) < 0) { logger(fmt + ":Can't read frame"); continue; }
+      logger(fmt + ":Read the frame");
       if(state != Playing) {
-         logger("read(?) frame but the pause was signaled");
+         logger(fmt + ":read(?) frame but the pause was signaled");
          av_free_packet(pkt);
          break;
       }

@@ -41,8 +41,8 @@ CallScreen::CallScreen( QString contactName, QString remoteURI, QString localURI
 }
 
 CallScreen::~CallScreen() {
-   camera->setState(Input::Paused);
-   remote->setState(Input::Paused);
+   //camera->setState(Input::Paused);
+   //remote->setState(Input::Paused);
    logger("Deleting remote");
    delete remote;
    logger("Deleting camera");

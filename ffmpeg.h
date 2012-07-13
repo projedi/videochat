@@ -105,6 +105,7 @@ protected:
    QList<Stream*> streams;
    QFuture<void> workerFuture;
    virtual void worker() = 0;
+   QString fmt;
 };
 
 class InputGeneric: public Input {
