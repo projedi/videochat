@@ -54,14 +54,14 @@ Output::Stream::Stream(StreamInfo info,AVCodec** encoder,Output* owner,int index
 
 //TODO: Check if here something leaks
 Output::Stream::~Stream() {
-   log("Closing output stream");
-   if(codec) { log("removing codec in output stream");
+   logger("Closing output stream");
+   if(codec) { logger("removing codec in output stream");
       avcodec_close(codec); //av_free(codec);
    }
-   if(type == Video && scaler) { log("removing scaler");
+   if(type == Video && scaler) { logger("removing scaler");
       sws_freeContext(scaler);
    } //else if(type == Audio && resampler) swr_freeContext(&resampler);
-   log("Closed output stream");
+   logger("Closed output stream");
 }
 
 AVPacket* Output::Stream::encode(AVFrame* frame) {
@@ -88,7 +88,7 @@ AVPacket* Output::Stream::encode(AVFrame* frame) {
    } else if(type == Audio) {
       //TODO: Implement
    }
-   if(res < 0) { log("Couldn't encode"); pkt = 0; }
+   if(res < 0) { logger("Couldn't encode"); pkt = 0; }
    if(!res) {
       if(!got_packet) { av_free_packet(pkt); pkt = 0; }
       else {
@@ -144,14 +144,14 @@ OutputGeneric::OutputGeneric(QString fmt, QString file) {
 
 OutputGeneric::~OutputGeneric() {
    av_write_trailer(format);
-   log("Closing file");
+   logger("Closing file");
    avio_close(format->pb);
    // It seems like duplication from supertype destructor. But avformat_free_context
    // bluntly frees(without closing) codecs and i have to close each codec before doing
    // that.
    for(int i = 0; i < streams.count(); i++) { if(streams[i]) delete streams[i]; }
    streams.clear();
-   log("freeing context");
+   logger("freeing context");
    avformat_free_context(format);
 }
 

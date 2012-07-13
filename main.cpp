@@ -5,14 +5,17 @@
 
 int main(int argc, char *argv[])
 {
-    QApplication a(argc, argv);
+   init();
+   logger("Started");
+   QApplication a(argc, argv);
 
-    avdevice_register_all();
-    av_register_all();
-    avformat_network_init();
+   avdevice_register_all();
+   av_register_all();
+   avformat_network_init();
 
-    MainWindow w;
-    w.show();
+   MainWindow w;
+   w.show();
 
-    return a.exec();
+   logger("Onto event loop");
+   return a.exec();
 }

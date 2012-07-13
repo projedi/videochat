@@ -15,10 +15,10 @@ Input::Stream::Stream(MediaType type, AVCodecContext* codec) {
 }
 
 Input::Stream::~Stream() {
-   log("Closing input stream");
+   logger("Closing input stream");
    //subscribers.clear();
    if(codec) {
-      log("Closing codec on input stream");
+      logger("Closing codec on input stream");
       avcodec_close(codec);
       //cout << "Freeing codec on input stream" << endl;
       //av_free(codec);
@@ -48,7 +48,7 @@ void Input::Stream::broadcast(AVFrame* frame) {
          //AVPacket* pkt = subs->encode(frame);
          //subs->sendToOwner(pkt);
          subs->process(frame);
-      } catch(...) { log("Error broadcasting to a stream"); continue; }
+      } catch(...) { logger("Error broadcasting to a stream"); continue; }
    }
    av_free(frame);
 }
@@ -83,10 +83,10 @@ StreamInfo Input::Stream::info() {
 }
 
 Input::~Input() {
-   log("Closing input");
+   logger("Closing input");
    setState(Paused);
    workerFuture.waitForFinished();
-   log("Worker down");
+   logger("Worker down");
    for(int i = 0; i < streams.count(); i++) {
       if(streams[i]) delete streams[i];
    }
@@ -136,21 +136,21 @@ InputGeneric::InputGeneric(QString fmt, QString file) {
 }
 
 InputGeneric::~InputGeneric() {
-   log("Closing generic input");
+   logger("Closing generic input");
    setState(Paused);
    if (format->iformat && (format->iformat->read_close)) {
-      log("Found iformat on generic input");
+      logger("Found iformat on generic input");
       format->iformat->read_close(format);
    }
    avio_close(format->pb);
-   log("Waiting for worker to go down");
+   logger("Waiting for worker to go down");
    workerFuture.waitForFinished();
-   log("Worker down with generic input");
+   logger("Worker down with generic input");
 
    // TODO: for the same reason as in OutputGeneric
    for(int i = 0; i < streams.count(); i++) { if(streams[i]) delete streams[i]; }
    streams.clear();
-   log("Freeing context on input generic");
+   logger("Freeing context on input generic");
    avformat_free_context(format);
 
 }
@@ -163,10 +163,10 @@ void InputGeneric::worker() {
       //cout << "On in: pts=" << pkt->pts << ";dts=" << pkt->dts << endl;
       try {
          //TODO: determine when negative number is an EOF
-         if(av_read_frame(format,pkt) < 0) { log("Can't read frame"); continue; }
+         if(av_read_frame(format,pkt) < 0) { logger("Can't read frame"); continue; }
          if(state != Playing) return;
          streams[pkt->stream_index]->process(pkt);
-      } catch(...) { log("Error using stream in worker"); }
+      } catch(...) { logger("Error using stream in worker"); }
       av_free_packet(pkt);
    }
 }

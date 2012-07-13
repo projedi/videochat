@@ -6,7 +6,7 @@ using namespace std;
 Player::Player(QWidget* parent): QWidget(parent) { pkt = 0; }
 
 Player::~Player() {
-   log("Closing player");
+   logger("Closing player");
    if(pkt) av_free_packet(pkt);
 }
 

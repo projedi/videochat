@@ -2,7 +2,7 @@ QT       += core gui network
 win32: LIBS += -L$$PWD/3rd-party/lib -lavcodec -lavformat -lavdevice -lswscale -lavutil -lswresample
 win32: INCLUDEPATH += $$PWD/3rd-party/include
 unix: LIBS += -lavcodec -lavformat -lavdevice -lswscale -lavutil -lswresample -lx264
-#QMAKE_CXXFLAGS = -D__STDC_CONSTANT_MACROS
+
 DEFINES += __STDC_CONSTANT_MACROS
 unix: DEFINES += LINUX
 win32: DEFINES += WIN32
@@ -11,6 +11,7 @@ TARGET = videochat-oldapi
 TEMPLATE = app
 
 SOURCES += main.cpp \
+           logging.cpp \
            mainwindow.cpp \
            callrequest.cpp \
            callresponse.cpp \
@@ -20,7 +21,8 @@ SOURCES += main.cpp \
            ffmpeg/hardware.cpp \
            ffmpeg/player.cpp
 
-HEADERS  += mainwindow.h \
+HEADERS  += logging.h \
+            mainwindow.h \
             callrequest.h \
             callresponse.h \
             callscreen.h \
