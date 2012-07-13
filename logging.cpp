@@ -7,6 +7,11 @@ void logger(QString str) {
 }
 
 void init() {
-   logging::logger.open("/tmp/videochat.log",fstream::out);
+#if defined(LINUX)
+   char *filename = "/tmp/videochat.log";
+#elif defined(WIN32)
+   char *filename = "videochat.log";
+#endif
+   logging::logger.open(filename,fstream::out);
    logging::startTime = clock();
 }
