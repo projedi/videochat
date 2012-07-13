@@ -158,15 +158,20 @@ InputGeneric::~InputGeneric() {
 void InputGeneric::worker() {
    //TODO: If lots of errors, then what?
    while(state != Paused) {
+      logger("Worker is working and whatnot");
       AVPacket* pkt = new AVPacket();
       av_init_packet(pkt);
       //cout << "On in: pts=" << pkt->pts << ";dts=" << pkt->dts << endl;
-      try {
-         //TODO: determine when negative number is an EOF
-         if(av_read_frame(format,pkt) < 0) { logger("Can't read frame"); continue; }
-         if(state != Playing) { logger("read(?) frame but the pause was signaled"); av_free_packet(pkt); break; }
-         streams[pkt->stream_index]->process(pkt);
-      } catch(...) { logger("Error using stream in worker"); }
+      logger("Getting ready to read the frame");
+      //TODO: determine when negative number is an EOF
+      if(av_read_frame(format,pkt) < 0) { logger("Can't read frame"); continue; }
+      logger("Read the frame");
+      if(state != Playing) {
+         logger("read(?) frame but the pause was signaled");
+         av_free_packet(pkt);
+         break;
+      }
+      streams[pkt->stream_index]->process(pkt);
       av_free_packet(pkt);
    }
 }
