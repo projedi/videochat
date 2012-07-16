@@ -8,8 +8,8 @@ class Player: public Output, public QWidget {
 public:
    Player(QWidget* parent = 0);
    ~Player();
-   Stream* addStream(StreamInfo);
-   void removeStream(Stream*);
+   OutputStream* addStream(StreamInfo);
+   void removeStream(OutputStream*);
    void sendPacket(AVPacket*);
 protected:
    void paintEvent(QPaintEvent*);

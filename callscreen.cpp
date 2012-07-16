@@ -42,7 +42,6 @@ void CallScreen::updateHardware() {
 }
 
 void CallScreen::setupCamera(int camIndex) {
-   logger("Setting up camera");
    if(serverVideoStream) {
       server->removeStream(serverVideoStream);
       serverVideoStream = 0;
@@ -52,7 +51,7 @@ void CallScreen::setupCamera(int camIndex) {
       playerLocalVideoStream = 0;
    }
    if(camera) delete camera;
-   Input::Stream *cameraStream = 0;
+   InputStream *cameraStream = 0;
    try {
       camera = new InputGeneric( cameras->getFormats()[camIndex]
                                , cameras->getFiles()[camIndex]);
@@ -68,27 +67,23 @@ void CallScreen::setupCamera(int camIndex) {
       playerLocalVideoStream = ui->playerLocal->addStream(cameraStream->info());
       cameraStream->subscribe(playerLocalVideoStream);
    }
-   logger("Set up camera");
 }
 
 void CallScreen::setupMicrophone(int micIndex) {
-   logger("Setting up microphone");
    if(microphone) delete microphone;
-   logger("Set up microphone");
 }
 
 void CallScreen::setupRemote(QString localURI) {
-   logger("Setting up remote");
    if(playerRemoteVideoStream) {
       server->removeStream(playerRemoteVideoStream);
       playerRemoteVideoStream = 0;
    }
    if(remote) delete remote;
-   Input::Stream *remoteVideoStream = 0;
+   InputStream *remoteVideoStream = 0;
    try {
       remote = new InputGeneric("mpegts", localURI);
       remote->setState(Input::Playing);
-      QList< Input::Stream* > streams = remote->getStreams();
+      QList<InputStream*> streams = remote->getStreams();
       if(streams.count() < 1) logger("Remote doesn't have streams");
       else {
          for(int i = 0; i < streams.count(); i++) {
@@ -104,7 +99,6 @@ void CallScreen::setupRemote(QString localURI) {
       playerRemoteVideoStream = ui->playerRemote->addStream(remoteVideoStream->info());
       remoteVideoStream->subscribe(playerRemoteVideoStream);
    }
-   logger("Set up remote");
 }
 
 CallScreen::~CallScreen() {

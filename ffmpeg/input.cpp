@@ -1,164 +1,137 @@
 #include "ffmpeg.h"
 #include <QtConcurrentRun>
 
-#include <iostream>
-using namespace std;
-
-Input::Stream::Stream(AVStream* avstream) throw(int) {
-   if(avstream->codec->codec_type == AVMEDIA_TYPE_VIDEO) {
-      type = Video;
-   } else if(avstream->codec->codec_type == AVMEDIA_TYPE_AUDIO) {
-      type = Audio;
-   } else {
-      type = Other;
+InputStream::InputStream(AVStream* avstream) {
+   switch(avstream->codec->codec_type) {
+      case AVMEDIA_TYPE_VIDEO:
+         type = Video;
+         break;
+      case AVMEDIA_TYPE_AUDIO:
+         type = Audio;
+         break;
+      default:
+         type = Other;
+         break;
    }
 
-   codec = avstream->codec;
+   codecCtx = avstream->codec;
    pts = 0;
-   if(type != Other) {
-      AVCodec* decoder = avcodec_find_decoder(codec->codec_id);
-      if(avcodec_open2(codec,decoder,0)<0) throw 1;
-   }
+   AVCodec* codec = avcodec_find_decoder(codecCtx->codec_id);
+   if(avcodec_open2(codecCtx,codec,0) < 0) {
+      avcodec_close(codecCtx);
+      codecCtx = 0;
+      state = Closed;
+   } else state = Opened;
 }
 
-Input::Stream::~Stream() {
-   logger("Closing input stream");
-   //subscribers.clear();
-   if(codec) {
-      logger("Closing codec on input stream");
-      avcodec_close(codec);
-      //cout << "Freeing codec on input stream" << endl;
-      //av_free(codec);
-   }
-}
+InputStream::~InputStream() { if(codecCtx) avcodec_close(codecCtx); }
 
-AVFrame* Input::Stream::decode(AVPacket* pkt) {
-   if(type == Video) {
-      int got_picture;
-      AVFrame* frame = avcodec_alloc_frame();
-      if(avcodec_decode_video2(codec,frame,&got_picture,pkt) < 0) return 0;
-      if(!got_picture) { av_free(frame); return 0; }
-      //frame->pts = av_frame_get_best_effort_timestamp(frame);
-      frame->pts = pts++;
-      return frame;
-   } else if(type == Audio) {
-      //TODO: Implement
-      return 0;
-   } else return 0;
-}
-
-void Input::Stream::broadcast(AVFrame* frame) {
-   if(!frame) return;
-   for(int i = 0; i < subscribers.count(); i++) {
-      Output::Stream* subs = subscribers[i];
-      try {
-         //AVPacket* pkt = subs->encode(frame);
-         //subs->sendToOwner(pkt);
-         subs->process(frame);
-      } catch(...) { logger("Error broadcasting to a stream"); continue; }
-   }
-   av_free(frame);
-}
-
-void Input::Stream::process(AVPacket* pkt) {
-   AVFrame* frame = decode(pkt);
-   broadcast(frame);
-}
-
-void Input::Stream::subscribe(Output::Stream* client) { subscribers.append(client); }
-
-void Input::Stream::unsubscribe(Output::Stream* client) { subscribers.removeOne(client); }
-
-QList<Output::Stream*> Input::Stream::getSubscribers() const { return subscribers; }
-
-StreamInfo Input::Stream::info() {
+StreamInfo InputStream::info() {
    StreamInfo info;
    info.type = type;
-   if(type == Video) {
-      info.video.width = codec->width;
-      info.video.height = codec->height;
-      info.video.pixelFormat = codec->pix_fmt;
-      info.video.fps = codec->time_base.den;
-      info.bitrate = codec->bit_rate;
-   } else if(type == Audio) {
-      info.audio.channelLayout = codec->channel_layout; 
-      info.audio.sampleFormat = codec->sample_fmt;
-      info.audio.sampleRate = codec->sample_rate;
-      info.bitrate = codec->bit_rate;
+   switch(type) {
+      case Video:
+         info.video.width = codecCtx->width;
+         info.video.height = codecCtx->height;
+         info.video.pixelFormat = codecCtx->pix_fmt;
+         info.video.fps = codecCtx->time_base.den;
+         info.bitrate = codecCtx->bit_rate;
+         break;
+      case Audio:
+         info.audio.channelLayout = codecCtx->channel_layout; 
+         info.audio.sampleFormat = codecCtx->sample_fmt;
+         info.audio.sampleRate = codecCtx->sample_rate;
+         info.bitrate = codecCtx->bit_rate;
+         break;
    }
    return info;
 }
 
-Input::~Input() {
-   logger("Closing input");
-   setState(Paused);
-   workerFuture.waitForFinished();
-   logger("Worker down");
-   for(int i = 0; i < streams.count(); i++) {
-      if(streams[i]) delete streams[i];
-   }
+InputStream::State InputStream::getState() { return state; }
+
+void InputStream::subscribe(OutputStream* client) {
+   QMutexLocker l(&subscribersLock);
+   if(subscribers.indexOf(client) == -1) subscribers.append(client);
 }
 
-QList<Input::Stream*> Input::getStreams() const { return streams; }
+void InputStream::unsubscribe(OutputStream* client) {
+   QMutexLocker l(&subscribersLock);
+   subscribers.removeOne(client);
+}
+
+void InputStream::process(AVPacket* pkt) {
+   AVFrame* frame = 0;
+   switch(type) {
+      case Video:
+         int got_picture;
+         frame = avcodec_alloc_frame();
+         if(avcodec_decode_video2(codecCtx,frame,&got_picture,pkt) < 0) break;
+         if(!got_picture) { av_free(frame); break; }
+         //frame->pts = av_frame_get_best_effort_timestamp(frame);
+         frame->pts = pts++;
+         break;
+      //TODO: Implement
+      case Audio:
+         break;
+      case Other:
+         break;
+   }
+   if(!frame) return;
+   subscribersLock.lock();
+   for(int i = 0; i < subscribers.count(); i++) subscribers[i]->process(frame);
+   subscribersLock.unlock();
+   av_free(frame);
+}
+
+Input::~Input() {
+   setState(Paused);
+   workerFuture.waitForFinished();
+   for(int i = 0; i < streams.count(); i++) { if(streams[i]) delete streams[i]; }
+}
+
+QList<InputStream*> Input::getStreams() { return streams; }
 
 Input::State Input::getState() { return state; }
 
 void Input::setState(Input::State state) {
-   QMutexLocker l(&m);
-   logger( fmt + ":Setting state from " + QString::number((int)this->state)
-         + " to " + QString::number((int)state));
+   QMutexLocker l(&stateLocker);
    if(state == this->state) return;
    this->state = state;
    if(state == Playing) workerFuture = QtConcurrent::run(this,&Input::worker);
 }
 
-int callback(void* arg) {
-    Input::State state = ((InputGeneric*)arg)->getState();
-    return state == Input::Paused;
-}
+int callback(void* arg) { return ((InputGeneric*)arg)->getState() == Input::Paused; }
 
-//TODO: provide a way to automagically determine the format
-InputGeneric::InputGeneric(QString fmt, QString file) throw(int) {
-   QByteArray formatN = fmt.toAscii();
-   QByteArray fileN = file.toAscii();
-   format = avformat_alloc_context();
-   format->interrupt_callback.callback = callback;
-   format->interrupt_callback.opaque = this;
-   if(avformat_open_input( &format, fileN.data(), av_find_input_format(formatN.data()), 0)<0)
-      throw 1;
-   //in win32 it must be commented for some reason
-   //avformat_find_stream_info(format,0);
-   for(int i = 0; i < format->nb_streams; i++) {
-      try {
-         streams.append(new Stream(format->streams[i]));
-      } catch(...) { logger(fmt + ":Error creating stream"); }
+InputGeneric::InputGeneric(QString filename, QString formatname) {
+   formatCtx = avformat_alloc_context();
+   formatCtx->interrupt_callback.callback = callback;
+   formatCtx->interrupt_callback.opaque = this;
+   AVInputFormat* avif = av_find_input_format(formatname.toAscii().data());
+   if(avformat_open_input(&formatCtx,filename.toAscii().data(),avif,0) < 0) state = Closed;
+   else {
+      for(int i = 0; i < formatCtx->nb_streams; i++) {
+         InputStream* stream = new InputStream(formatCtx->streams[i]);
+         if(stream->getState() == Closed) delete stream;
+         else streams.append(stream);
+      }
+      state = Paused;
    }
-   state = Paused;
-   this->fmt = fmt;
 }
 
 InputGeneric::~InputGeneric() {
-   logger(fmt + ":Closing generic input");
    setState(Paused);
-   closingMutex.lock();
-   logger(fmt + ":Locking closingMutex in destructor");
-   if (format->iformat && (format->iformat->read_close)) {
-      logger(fmt + ":Found iformat on generic input");
-      format->iformat->read_close(format);
-   }
-   avio_close(format->pb);
-   closingMutex.unlock();
-   logger(fmt + ":Unlocking closingMutex in destructor");
-   //logger(fmt + ":Waiting for worker to go down");
+   closingLocker.lock();
+   if(formatCtx->iformat && (formatCtx->iformat->read_close))
+      formatCtx->iformat->read_close(formatCtx);
+   avio_close(formatCtx->pb);
+   closingLocker.unlock();
+   //It might seem like duplication from parent destructor but it's required because
+   //avformat_free_context frees codecs itself(but doesnt't close them).
    workerFuture.waitForFinished();
-   logger(fmt + ":Worker down with generic input");
-
-   // TODO: for the same reason as in OutputGeneric
+   //TODO: Watch the memory when I remove only this loop.
    for(int i = 0; i < streams.count(); i++) { if(streams[i]) delete streams[i]; }
    streams.clear();
-   logger(fmt + ":Freeing context on input generic");
-   avformat_free_context(format);
-
+   avformat_free_context(formatCtx);
 }
 
 void InputGeneric::worker() {
@@ -166,16 +139,10 @@ void InputGeneric::worker() {
    while(state != Paused) {
       AVPacket* pkt = new AVPacket();
       av_init_packet(pkt);
-      //cout << "On in: pts=" << pkt->pts << ";dts=" << pkt->dts << endl;
-      closingMutex.lock();
+      closingLocker.lock();
       //TODO: determine when negative number is an EOF
-      if(av_read_frame(format,pkt) < 0) { logger(fmt + ":Can't read frame"); continue; }
-      closingMutex.unlock();
-      if(state != Playing) {
-         logger(fmt + ":Read(?) frame but the pause was signaled");
-         av_free_packet(pkt);
-         break;
-      }
+      if(av_read_frame(formatCtx,pkt) < 0) { logger(":Can't read frame"); continue; }
+      closingLocker.unlock();
       streams[pkt->stream_index]->process(pkt);
       av_free_packet(pkt);
    }

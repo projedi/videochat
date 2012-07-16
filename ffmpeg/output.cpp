@@ -2,7 +2,7 @@
 #include <iostream>
 using namespace std;
 
-Output::Stream::Stream(StreamInfo info,AVCodec* encoder,Output* owner,int index) throw(int) {
+OutputStream::OutputStream(StreamInfo info,AVCodec* encoder,Output* owner,int index) {
    this->owner = owner;
    this->index = index;
    type = info.type;
@@ -45,13 +45,13 @@ Output::Stream::Stream(StreamInfo info,AVCodec* encoder,Output* owner,int index)
    }
 }
 
-Output::Stream::~Stream() {
+OutputStream::~OutputStream() {
    if(codec) avcodec_close(codec);
    if(type == Video && scaler) sws_freeContext(scaler);
-   //if(type == Audio && resampler) swr_freeContext(&resampler);
+   if(type == Audio && resampler) swr_free(&resampler);
 }
 
-void Output::Stream::process(AVFrame* frame) {
+void OutputStream::process(AVFrame* frame) {
    if(!(type == Video || type == Audio)) return;
    AVFrame* newFrame = avcodec_alloc_frame();
    AVPacket* pkt = new AVPacket();
@@ -84,7 +84,7 @@ void Output::Stream::process(AVFrame* frame) {
    owner->sendPacket(pkt);
 }
 
-StreamInfo Output::Stream::info() {
+StreamInfo OutputStream::info() {
    StreamInfo info;
    info.type = type;
    if(type == Video) {
@@ -102,13 +102,13 @@ StreamInfo Output::Stream::info() {
    return info;
 }
 
-AVCodecContext* Output::Stream::getCodec() { return codec; }
+AVCodecContext* OutputStream::getCodec() { return codec; }
 
 Output::~Output() {
    for(int i = 0; i < streams.count(); i++) { if(streams[i]) delete streams[i]; }
 }
 
-QList<Output::Stream*> Output::getStreams() const { return streams; }
+QList<OutputStream*> Output::getStreams() const { return streams; }
 
 OutputGeneric::OutputGeneric(QString fmt, QString file) {
    QByteArray formatName = fmt.toAscii();
@@ -131,14 +131,14 @@ OutputGeneric::~OutputGeneric() {
    avformat_free_context(format);
 }
 
-Output::Stream* OutputGeneric::addStream(StreamInfo info) {
+OutputStream* OutputGeneric::addStream(StreamInfo info) {
    try {
       CodecID codec_id = (info.type==Video) ? CODEC_ID_H264
                        : (info.type==Audio) ? CODEC_ID_MP2
                        : CODEC_ID_NONE;
       //TODO: what will it do when CODEC_ID_NONE
       AVCodec *encoder = avcodec_find_encoder(codec_id);
-      Stream* stream = new Stream(info,encoder,this,format->nb_streams);
+      OutputStream* stream = new OutputStream(info,encoder,this,format->nb_streams);
       AVStream* avstream = avformat_new_stream(format,encoder);
       avstream->codec = stream->getCodec();
       //TODO: Check what happens if i don't do that. Especially when writing to a file.
@@ -154,7 +154,7 @@ Output::Stream* OutputGeneric::addStream(StreamInfo info) {
    } catch(...) { return 0; }
 }
 
-void OutputGeneric::removeStream(Output::Stream* stream) {
+void OutputGeneric::removeStream(OutputStream* stream) {
    int str_index = streams.indexOf(stream);
    streams.removeAt(str_index);
    delete stream;

@@ -1,11 +1,16 @@
-QT       += core gui network
-win32: LIBS += -L$$PWD/3rd-party/lib -lavcodec -lavformat -lavdevice -lswscale -lavutil -lswresample
-win32: INCLUDEPATH += $$PWD/3rd-party/include
-unix: LIBS += -lavcodec -lavformat -lavdevice -lswscale -lavutil -lswresample -lx264
+QT += core gui network
+
+win32 {
+   LIBS += -L$$PWD/3rd-party/lib -lavcodec -lavformat -lavdevice \
+   INCLUDEPATH += $$PWD/3rd-party/include
+   DEFINES += WIN32
+}
+unix {
+   LIBS += -lavcodec -lavformat -lavdevice -lswscale -lavutil -lswresample
+   DEFINES += LINUX
+}
 
 DEFINES += __STDC_CONSTANT_MACROS
-unix: DEFINES += LINUX
-win32: DEFINES += WIN32
 
 TARGET = videochat-oldapi
 TEMPLATE = app
@@ -27,6 +32,9 @@ HEADERS  += logging.h \
             callresponse.h \
             callscreen.h \
             ffmpeg.h \
+            ffmpeg/input.h \
+            ffmpeg/outpu.h \
+            ffmpeg/hardware.h \
             player.h
 
 FORMS    += mainwindow.ui \

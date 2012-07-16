@@ -16,8 +16,8 @@ Player::~Player() {
    paintMutex.unlock();
 }
 
-Output::Stream* Player::addStream(StreamInfo info) {
-   Stream *stream = 0;
+OutputStream* Player::addStream(StreamInfo info) {
+   OutputStream *stream = 0;
    if(info.type == Video) {
       int i;
       for(i = 0; i < streams.count(); i++) if(streams[i]->info().type == Video) break;
@@ -27,14 +27,14 @@ Output::Stream* Player::addStream(StreamInfo info) {
       info.video.height = this->height();
       info.video.pixelFormat = PIX_FMT_RGB32;
       info.bitrate = 0;
-      stream = new Stream(info,encoder,this,streams.count());
+      stream = new OutputStream(info,encoder,this,streams.count());
       streams.append(stream);
    }
    return stream;
 }
 
 //TODO: Change index of all streams greater than removed
-void Player::removeStream(Output::Stream* stream) {
+void Player::removeStream(OutputStream* stream) {
    int strIndex = streams.indexOf(stream);
    delete stream;
    streams.removeAt(strIndex);

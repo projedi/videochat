@@ -25,7 +25,7 @@ private:
    Ui::CallScreen *ui;
    Input *remote, *camera, *microphone;
    Output *server;
-   Output::Stream *serverVideoStream, *playerLocalVideoStream, *playerRemoteVideoStream;
+   OutputStream *serverVideoStream, *playerLocalVideoStream, *playerRemoteVideoStream;
    QAbstractSocket* socket;
    VideoHardware* cameras;
    AudioHardware* microphones;
