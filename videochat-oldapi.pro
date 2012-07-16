@@ -2,6 +2,7 @@ QT += core gui network
 
 win32 {
    LIBS += -L$$PWD/3rd-party/lib -lavcodec -lavformat -lavdevice \
+                                 -lswscale -lavutil -lswresample
    INCLUDEPATH += $$PWD/3rd-party/include
    DEFINES += WIN32
 }
@@ -33,7 +34,7 @@ HEADERS  += logging.h \
             callscreen.h \
             ffmpeg.h \
             ffmpeg/input.h \
-            ffmpeg/outpu.h \
+            ffmpeg/output.h \
             ffmpeg/hardware.h \
             player.h
 
