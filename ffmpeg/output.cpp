@@ -32,9 +32,9 @@ OutputStream::OutputStream(StreamInfo info,AVCodec* encoder,Output* owner,int in
          codec->time_base.den = info.video.fps;
          //TODO: move to settings
          codec->gop_size = 5;
-#ifdef LINUX
-         codec->bit_rate = 500000;
-#endif
+//#ifdef LINUX
+         codec->bit_rate = 1000000;
+//#endif
       } else {
          //TODO: implement correctly
          codec->sample_fmt = encoder->sample_fmts[0];

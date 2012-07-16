@@ -27,7 +27,7 @@ CallScreen::CallScreen( QString contactName, QString remoteURI, QString localURI
    microphone = 0;
    remote = 0;
    server = 0;
-   server = new OutputGeneric("mpegts", remoteURI);
+   server = new OutputGeneric("mjpeg", remoteURI);
    QtConcurrent::run(this,&CallScreen::setupCamera,camIndex);
    QtConcurrent::run(this,&CallScreen::setupMicrophone,micIndex);
    QtConcurrent::run(this,&CallScreen::setupRemote,localURI);
@@ -82,7 +82,7 @@ void CallScreen::setupRemote(QString localURI) {
    if(remote) delete remote;
    InputStream *remoteVideoStream = 0;
    try {
-      remote = new InputGeneric(localURI, "mpegts");
+      remote = new InputGeneric(localURI, "mjpeg");
       logger("Constructed remote");
       remote->setState(Input::Playing);
       logger("Set state to play");

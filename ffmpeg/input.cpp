@@ -16,19 +16,6 @@ InputStream::InputStream(AVStream* avstream) {
    codecCtx = avstream->codec;
    pts = 0;
    AVCodec* codec = avcodec_find_decoder(codecCtx->codec_id);
-   if(!codec) {
-      //CODEC_ID_JPEG2000
-      codec = avcodec_find_decoder(CODEC_ID_MJPEG);
-      avcodec_get_context_defaults3(codecCtx,codec);
-      codecCtx->codec_id = CODEC_ID_MJPEG;
-      codecCtx->pix_fmt = codec->pix_fmts[0];
-      codecCtx->width = 640;
-      codecCtx->height = 480;
-      codecCtx->bit_rate = 400000;
-      codecCtx->time_base.num = 1;
-      codecCtx->time_base.den = 25;
-      codecCtx->gop_size = 5;
-   }
    if(avcodec_open2(codecCtx,codec,0) < 0) {
       avcodec_close(codecCtx);
       codecCtx = 0;
