@@ -53,8 +53,8 @@ void CallScreen::setupCamera(int camIndex) {
    if(camera) delete camera;
    InputStream *cameraStream = 0;
    try {
-      camera = new InputGeneric( cameras->getFormats()[camIndex]
-                               , cameras->getFiles()[camIndex]);
+      camera = new InputGeneric( cameras->getFiles()[camIndex]
+                               , cameras->getFormats()[camIndex]);
       camera->setState(Input::Playing);
       if(camera->getStreams().count() < 1) logger("Camera doesn't have streams");
       else cameraStream  = camera->getStreams()[0];
@@ -81,7 +81,7 @@ void CallScreen::setupRemote(QString localURI) {
    if(remote) delete remote;
    InputStream *remoteVideoStream = 0;
    try {
-      remote = new InputGeneric("mpegts", localURI);
+      remote = new InputGeneric(localURI, "mpegts");
       remote->setState(Input::Playing);
       QList<InputStream*> streams = remote->getStreams();
       if(streams.count() < 1) logger("Remote doesn't have streams");

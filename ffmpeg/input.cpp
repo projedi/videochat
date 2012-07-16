@@ -13,7 +13,6 @@ InputStream::InputStream(AVStream* avstream) {
          type = Other;
          break;
    }
-
    codecCtx = avstream->codec;
    pts = 0;
    AVCodec* codec = avcodec_find_decoder(codecCtx->codec_id);
@@ -100,9 +99,14 @@ void Input::setState(Input::State state) {
    if(state == Playing) workerFuture = QtConcurrent::run(this,&Input::worker);
 }
 
-int callback(void* arg) { return ((InputGeneric*)arg)->getState() == Input::Paused; }
+int callback(void* arg) {
+   Input::State state = ((InputGeneric*)arg)->getState();
+   return state == Input::Paused || state == Input::Closed;
+}
 
 InputGeneric::InputGeneric(QString filename, QString formatname) {
+   //initFuture = QtConcurrent::run(this, &InputGeneric::init, filename, formatname);
+   state = Opening;
    formatCtx = avformat_alloc_context();
    formatCtx->interrupt_callback.callback = callback;
    formatCtx->interrupt_callback.opaque = this;
@@ -111,11 +115,14 @@ InputGeneric::InputGeneric(QString filename, QString formatname) {
    else {
       for(int i = 0; i < formatCtx->nb_streams; i++) {
          InputStream* stream = new InputStream(formatCtx->streams[i]);
-         if(stream->getState() == Closed) delete stream;
+         if(stream->getState() == InputStream::Closed) delete stream;
          else streams.append(stream);
       }
       state = Paused;
    }
+}
+
+void InputGeneric::init(QString filename, QString formatname) {
 }
 
 InputGeneric::~InputGeneric() {
@@ -141,7 +148,7 @@ void InputGeneric::worker() {
       av_init_packet(pkt);
       closingLocker.lock();
       //TODO: determine when negative number is an EOF
-      if(av_read_frame(formatCtx,pkt) < 0) { logger(":Can't read frame"); continue; }
+      if(av_read_frame(formatCtx,pkt) < 0) { logger("Can't read frame"); continue; }
       closingLocker.unlock();
       streams[pkt->stream_index]->process(pkt);
       av_free_packet(pkt);
