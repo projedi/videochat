@@ -43,8 +43,6 @@ public:
    InputGeneric(QString filename, QString formatname = "");
    ~InputGeneric();
 private:
-   void init(QString filename, QString formatname);
-   QFuture<void> initFuture;
    QMutex closingLocker;
    AVFormatContext* formatCtx;
    void worker();

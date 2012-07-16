@@ -28,8 +28,8 @@ CallScreen::CallScreen( QString contactName, QString remoteURI, QString localURI
    remote = 0;
    server = new OutputGeneric("mpegts", remoteURI);
    QtConcurrent::run(this,&CallScreen::setupCamera,camIndex);
-   QtConcurrent::run(this,&CallScreen::setupMicrophone,micIndex);
-   QtConcurrent::run(this,&CallScreen::setupRemote,localURI);
+   //QtConcurrent::run(this,&CallScreen::setupMicrophone,micIndex);
+   //QtConcurrent::run(this,&CallScreen::setupRemote,localURI);
 }
 
 void CallScreen::updateHardware() {

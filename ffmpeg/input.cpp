@@ -122,9 +122,6 @@ InputGeneric::InputGeneric(QString filename, QString formatname) {
    }
 }
 
-void InputGeneric::init(QString filename, QString formatname) {
-}
-
 InputGeneric::~InputGeneric() {
    setState(Paused);
    closingLocker.lock();
