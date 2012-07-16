@@ -16,6 +16,19 @@ InputStream::InputStream(AVStream* avstream) {
    codecCtx = avstream->codec;
    pts = 0;
    AVCodec* codec = avcodec_find_decoder(codecCtx->codec_id);
+   if(!codec) {
+      //CODEC_ID_JPEG2000
+      codec = avcodec_find_decoder(CODEC_ID_MJPEG);
+      avcodec_get_context_defaults3(codecCtx,codec);
+      codecCtx->codec_id = CODEC_ID_MJPEG;
+      codecCtx->pix_fmt = codec->pix_fmts[0];
+      codecCtx->width = 640;
+      codecCtx->height = 480;
+      codecCtx->bit_rate = 400000;
+      codecCtx->time_base.num = 1;
+      codecCtx->time_base.den = 25;
+      codecCtx->gop_size = 5;
+   }
    if(avcodec_open2(codecCtx,codec,0) < 0) {
       avcodec_close(codecCtx);
       codecCtx = 0;
@@ -64,8 +77,8 @@ void InputStream::process(AVPacket* pkt) {
       case Video:
          int got_picture;
          frame = avcodec_alloc_frame();
-         if(avcodec_decode_video2(codecCtx,frame,&got_picture,pkt) < 0) break;
-         if(!got_picture) { av_free(frame); break; }
+         if(avcodec_decode_video2(codecCtx,frame,&got_picture,pkt) < 0){frame = 0;break;}
+         if(!got_picture) { av_free(frame); frame = 0; break; }
          //frame->pts = av_frame_get_best_effort_timestamp(frame);
          frame->pts = pts++;
          break;

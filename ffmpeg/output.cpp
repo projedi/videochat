@@ -72,13 +72,13 @@ void OutputStream::process(AVFrame* frame) {
       newFrame->pts=frame->pts;
       //cout << "On frame: pts=" << frame->pts << endl;
       res = avcodec_encode_video2(codec, pkt, newFrame, &got_packet);
-      avpicture_free((AVPicture*)newFrame);
-      av_free(newFrame);
    } else if(type == Audio) {
       //TODO: Implement
    }
    if(res < 0 ) return;
    if(!got_packet) { av_free_packet(pkt); return; }
+   avpicture_free((AVPicture*)newFrame);
+   av_free(newFrame);
    pkt->stream_index = index;
    if(codec->coded_frame->key_frame) pkt->flags|=AV_PKT_FLAG_KEY;
    owner->sendPacket(pkt);
@@ -133,7 +133,7 @@ OutputGeneric::~OutputGeneric() {
 
 OutputStream* OutputGeneric::addStream(StreamInfo info) {
    try {
-      CodecID codec_id = (info.type==Video) ? CODEC_ID_H264
+      CodecID codec_id = (info.type==Video) ? CODEC_ID_MJPEG
                        : (info.type==Audio) ? CODEC_ID_MP2
                        : CODEC_ID_NONE;
       //TODO: what will it do when CODEC_ID_NONE

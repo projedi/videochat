@@ -26,10 +26,11 @@ CallScreen::CallScreen( QString contactName, QString remoteURI, QString localURI
    camera = 0;
    microphone = 0;
    remote = 0;
+   server = 0;
    server = new OutputGeneric("mpegts", remoteURI);
    QtConcurrent::run(this,&CallScreen::setupCamera,camIndex);
-   //QtConcurrent::run(this,&CallScreen::setupMicrophone,micIndex);
-   //QtConcurrent::run(this,&CallScreen::setupRemote,localURI);
+   QtConcurrent::run(this,&CallScreen::setupMicrophone,micIndex);
+   QtConcurrent::run(this,&CallScreen::setupRemote,localURI);
 }
 
 void CallScreen::updateHardware() {
@@ -82,7 +83,9 @@ void CallScreen::setupRemote(QString localURI) {
    InputStream *remoteVideoStream = 0;
    try {
       remote = new InputGeneric(localURI, "mpegts");
+      logger("Constructed remote");
       remote->setState(Input::Playing);
+      logger("Set state to play");
       QList<InputStream*> streams = remote->getStreams();
       if(streams.count() < 1) logger("Remote doesn't have streams");
       else {
