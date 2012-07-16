@@ -13,11 +13,16 @@ CallScreen::CallScreen( QString contactName, QString remoteURI, QString localURI
    ui->setupUi(this);
    connect(ui->buttonEndCall,SIGNAL(clicked()),SLOT(rejectCall()));
    setWindowTitle("Conversation with " + contactName);
+   cameras = 0;
+   microphones = 0;
 
    updateHardware();
    int camIndex = ui->comboCamera->currentIndex();
    int micIndex = ui->comboMicrophone->currentIndex();
 
+   serverVideoStream = 0;
+   playerLocalVideoStream = 0;
+   playerRemoteVideoStream = 0;
    camera = 0;
    microphone = 0;
    remote = 0;
@@ -37,6 +42,7 @@ void CallScreen::updateHardware() {
 }
 
 void CallScreen::setupCamera(int camIndex) {
+   logger("Setting up camera");
    if(serverVideoStream) {
       server->removeStream(serverVideoStream);
       serverVideoStream = 0;
@@ -62,13 +68,17 @@ void CallScreen::setupCamera(int camIndex) {
       playerLocalVideoStream = ui->playerLocal->addStream(cameraStream->info());
       cameraStream->subscribe(playerLocalVideoStream);
    }
+   logger("Set up camera");
 }
 
 void CallScreen::setupMicrophone(int micIndex) {
+   logger("Setting up microphone");
    if(microphone) delete microphone;
+   logger("Set up microphone");
 }
 
 void CallScreen::setupRemote(QString localURI) {
+   logger("Setting up remote");
    if(playerRemoteVideoStream) {
       server->removeStream(playerRemoteVideoStream);
       playerRemoteVideoStream = 0;
@@ -94,6 +104,7 @@ void CallScreen::setupRemote(QString localURI) {
       playerRemoteVideoStream = ui->playerRemote->addStream(remoteVideoStream->info());
       remoteVideoStream->subscribe(playerRemoteVideoStream);
    }
+   logger("Set up remote");
 }
 
 CallScreen::~CallScreen() {

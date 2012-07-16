@@ -1,27 +1,35 @@
 #include "player.h"
+#include <QPainter>
 
 #include <iostream>
 using namespace std;
 
 Player::Player(QWidget* parent): QWidget(parent) {
-   connect(&t,SIGNAL(timeout()),this,SLOT(repaint()));
-   t.start(40);
-   pkt = 0;
+   connect(&timer,SIGNAL(timeout()),this,SLOT(repaint()));
+   timer.start(40);
+   videoPacket = 0;
 }
 
 Player::~Player() {
-   logger("Closing player");
-   if(pkt) av_free_packet(pkt);
+   paintMutex.lock();
+   if(videoPacket) av_free_packet(videoPacket);
+   paintMutex.unlock();
 }
 
 Output::Stream* Player::addStream(StreamInfo info) {
-   if(info.type != Video) return 0;
-   AVCodec* encoder = avcodec_find_encoder(CODEC_ID_RAWVIDEO);
-   info.video.width = this->width();
-   info.video.height = this->height();
-   info.video.pixelFormat = PIX_FMT_RGB32;
-   Stream* stream = new Stream(info,encoder,this,0);
-   streams.append(stream);
+   Stream *stream = 0;
+   if(info.type == Video) {
+      int i;
+      for(i = 0; i < streams.count(); i++) if(streams[i]->info().type == Video) break;
+      if(i < streams.count()) return 0;
+      AVCodec* encoder = avcodec_find_encoder(CODEC_ID_RAWVIDEO);
+      info.video.width = this->width();
+      info.video.height = this->height();
+      info.video.pixelFormat = PIX_FMT_RGB32;
+      info.bitrate = 0;
+      stream = new Stream(info,encoder,this,streams.count());
+      streams.append(stream);
+   }
    return stream;
 }
 
@@ -35,18 +43,20 @@ void Player::removeStream(Output::Stream* stream) {
 void Player::sendPacket(AVPacket* pkt) {
    if(pkt->stream_index >= streams.count()) return;
    if(streams[pkt->stream_index]->info().type == Video) {
-      m.lock();
-      if(this->pkt) { av_free_packet(this->pkt); this->pkt=0; }
-      this->pkt = pkt;
-      m.unlock();
+      paintMutex.lock();
+      if(videoPacket) av_free_packet(videoPacket);
+      videoPacket = pkt;
+      paintMutex.unlock();
    }
 }
 
 void Player::paintEvent(QPaintEvent*) {
-   m.lock();
-   if(!pkt) { m.unlock(); return; }
-   QPainter painter(this);
-   QImage image = QImage(pkt->data, this->width(), this->height(), QImage::Format_RGB32);
-   painter.drawImage(QPointF(0,0),image);
-   m.unlock();
+   paintMutex.lock();
+   if(videoPacket) {
+      QPainter painter(this);
+      QImage image = QImage( videoPacket->data, this->width(), this->height()
+                           , QImage::Format_RGB32);
+      painter.drawImage(QPointF(0,0),image);
+   }
+   paintMutex.unlock();
 }

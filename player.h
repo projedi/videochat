@@ -1,7 +1,6 @@
 #pragma once
 
 #include "ffmpeg.h"
-#include <QPainter>
 #include <QWidget>
 #include <QTimer>
 
@@ -15,7 +14,7 @@ public:
 protected:
    void paintEvent(QPaintEvent*);
 private:
-   AVPacket* pkt;
-   QTimer t;
-   QMutex m;
+   AVPacket* videoPacket;
+   QTimer timer;
+   QMutex paintMutex;
 };

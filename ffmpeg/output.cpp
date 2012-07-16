@@ -12,7 +12,7 @@ Output::Stream::Stream(StreamInfo info,AVCodec* encoder,Output* owner,int index)
    if(encoder) {
       codec = avcodec_alloc_context3(encoder);
       codec->codec_id = encoder->id;
-      //codec->bit_rate = info.bitrate;
+      codec->bit_rate = info.bitrate;
       //TODO: remove for case of file output
       codec->flags2 |= CODEC_FLAG2_LOCAL_HEADER;
       if(type == Video) {
@@ -138,11 +138,9 @@ Output::Stream* OutputGeneric::addStream(StreamInfo info) {
                        : CODEC_ID_NONE;
       //TODO: what will it do when CODEC_ID_NONE
       AVCodec *encoder = avcodec_find_encoder(codec_id);
-      //Stream* stream = new Stream(info,encoder,this,format->nb_streams);
+      Stream* stream = new Stream(info,encoder,this,format->nb_streams);
       AVStream* avstream = avformat_new_stream(format,encoder);
-      //avstream->codec = stream->getCodec();
-      logger("Getting ready to check sanity");
-      logger("AVStream codec is h264: " + QString::number(codec_id == avstream->codec->codec_id));
+      avstream->codec = stream->getCodec();
       //TODO: Check what happens if i don't do that. Especially when writing to a file.
       // As a matter of fact it's interesting what happens if I leave that and still will
       // be writing to a file. To be more precise I have no idea how to handle all that
@@ -151,9 +149,8 @@ Output::Stream* OutputGeneric::addStream(StreamInfo info) {
       //TODO: I remember that I should put GLOBAL_HEADER flag somewhere when it's
       // required
       avformat_write_header(format,0);
-      //streams.append(stream);
-      //return stream;
-      return 0;
+      streams.append(stream);
+      return stream;
    } catch(...) { return 0; }
 }
 

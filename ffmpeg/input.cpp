@@ -164,18 +164,13 @@ InputGeneric::~InputGeneric() {
 void InputGeneric::worker() {
    //TODO: If lots of errors, then what?
    while(state != Paused) {
-      logger(fmt + ":Worker is working and whatnot");
       AVPacket* pkt = new AVPacket();
       av_init_packet(pkt);
       //cout << "On in: pts=" << pkt->pts << ";dts=" << pkt->dts << endl;
-      logger(fmt + ":Getting ready to read the frame");
       closingMutex.lock();
-      logger(fmt + ":Locking closingMutex in worker");
       //TODO: determine when negative number is an EOF
       if(av_read_frame(format,pkt) < 0) { logger(fmt + ":Can't read frame"); continue; }
-      logger(fmt + ":Read the frame");
       closingMutex.unlock();
-      logger(fmt + ":Unlocking closingMutex in worker");
       if(state != Playing) {
          logger(fmt + ":Read(?) frame but the pause was signaled");
          av_free_packet(pkt);
