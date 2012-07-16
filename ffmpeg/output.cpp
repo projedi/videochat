@@ -2,36 +2,29 @@
 #include <iostream>
 using namespace std;
 
-Output::Stream::Stream(StreamInfo info,AVCodec** encoder,Output* owner,int index) throw(int) {
+Output::Stream::Stream(StreamInfo info,AVCodec* encoder,Output* owner,int index) throw(int) {
    this->owner = owner;
    this->index = index;
    type = info.type;
    //Oh, C++, you can't do that yourself.
    codec = 0;
    scaler = 0;
-   if(!*encoder) {
-      CodecID codec_id = (type==Video) ? CODEC_ID_H264
-                       : (type==Audio) ? CODEC_ID_MP2
-                       : CODEC_ID_NONE;
-      //TODO: what will it do when CODEC_ID_NONE
-      *encoder = avcodec_find_encoder(codec_id);
-   }
-   if(*encoder) {
-      codec = avcodec_alloc_context3(*encoder);
-      codec->codec_id = (*encoder)->id;
+   if(encoder) {
+      codec = avcodec_alloc_context3(encoder);
+      codec->codec_id = encoder->id;
       //codec->bit_rate = info.bitrate;
       //TODO: remove for case of file output
       codec->flags2 |= CODEC_FLAG2_LOCAL_HEADER;
       if(type == Video) {
-         if((*encoder)->pix_fmts) {
-            const PixelFormat* pix_fmt = (*encoder)->pix_fmts;
+         if(encoder->pix_fmts) {
+            const PixelFormat* pix_fmt = encoder->pix_fmts;
             for(; *pix_fmt != PIX_FMT_NONE; pix_fmt++) {
                if(info.video.pixelFormat == *pix_fmt) {
                   codec->pix_fmt = *pix_fmt;
                   break;
                }
             }
-            if(*pix_fmt == PIX_FMT_NONE) codec->pix_fmt = (*encoder)->pix_fmts[0];
+            if(*pix_fmt == PIX_FMT_NONE) codec->pix_fmt = encoder->pix_fmts[0];
          } else codec->pix_fmt = info.video.pixelFormat;
          codec->width = info.video.width;
          codec->height = info.video.height;
@@ -44,28 +37,22 @@ Output::Stream::Stream(StreamInfo info,AVCodec** encoder,Output* owner,int index
 #endif
       } else {
          //TODO: implement correctly
-         codec->sample_fmt = (*encoder)->sample_fmts[0];
+         codec->sample_fmt = encoder->sample_fmts[0];
          codec->sample_rate = info.audio.sampleRate;
          codec->channel_layout = info.audio.channelLayout;
       }
-      if(avcodec_open2(codec,*encoder,0)<0) throw 1;
+      if(avcodec_open2(codec,encoder,0)<0) throw 1;
    }
 }
 
-//TODO: Check if here something leaks
 Output::Stream::~Stream() {
-   logger("Closing output stream");
-   if(codec) { logger("removing codec in output stream");
-      avcodec_close(codec); //av_free(codec);
-   }
-   if(type == Video && scaler) { logger("removing scaler");
-      sws_freeContext(scaler);
-   } //else if(type == Audio && resampler) swr_freeContext(&resampler);
-   logger("Closed output stream");
+   if(codec) avcodec_close(codec);
+   if(type == Video && scaler) sws_freeContext(scaler);
+   //if(type == Audio && resampler) swr_freeContext(&resampler);
 }
 
-AVPacket* Output::Stream::encode(AVFrame* frame) {
-   if(!(type == Video || type == Audio)) return 0;
+void Output::Stream::process(AVFrame* frame) {
+   if(!(type == Video || type == Audio)) return;
    AVFrame* newFrame = avcodec_alloc_frame();
    AVPacket* pkt = new AVPacket();
    av_init_packet(pkt);
@@ -85,27 +72,16 @@ AVPacket* Output::Stream::encode(AVFrame* frame) {
       newFrame->pts=frame->pts;
       //cout << "On frame: pts=" << frame->pts << endl;
       res = avcodec_encode_video2(codec, pkt, newFrame, &got_packet);
+      avpicture_free((AVPicture*)newFrame);
+      av_free(newFrame);
    } else if(type == Audio) {
       //TODO: Implement
    }
-   if(res < 0) { logger("Couldn't encode"); pkt = 0; }
-   if(!res) {
-      if(!got_packet) { av_free_packet(pkt); pkt = 0; }
-      else {
-         pkt->stream_index = index;
-         if(codec->coded_frame->key_frame) pkt->flags|=AV_PKT_FLAG_KEY;
-      }
-   }
-   avpicture_free((AVPicture*)newFrame);
-   av_free(newFrame);
-   return pkt;
-}
-
-void Output::Stream::sendToOwner(AVPacket* pkt) { if(pkt) owner->sendPacket(pkt); }
-
-void Output::Stream::process(AVFrame* frame) {
-   AVPacket* pkt = encode(frame);
-   sendToOwner(pkt);
+   if(res < 0 ) return;
+   if(!got_packet) { av_free_packet(pkt); return; }
+   pkt->stream_index = index;
+   if(codec->coded_frame->key_frame) pkt->flags|=AV_PKT_FLAG_KEY;
+   owner->sendPacket(pkt);
 }
 
 StreamInfo Output::Stream::info() {
@@ -157,20 +133,27 @@ OutputGeneric::~OutputGeneric() {
 
 Output::Stream* OutputGeneric::addStream(StreamInfo info) {
    try {
-      AVCodec* encoder = 0;
-      Stream* stream = new Stream(info,&encoder,this,format->nb_streams);
+      CodecID codec_id = (info.type==Video) ? CODEC_ID_H264
+                       : (info.type==Audio) ? CODEC_ID_MP2
+                       : CODEC_ID_NONE;
+      //TODO: what will it do when CODEC_ID_NONE
+      AVCodec *encoder = avcodec_find_encoder(codec_id);
+      //Stream* stream = new Stream(info,encoder,this,format->nb_streams);
       AVStream* avstream = avformat_new_stream(format,encoder);
-      avstream->codec = stream->getCodec();
+      //avstream->codec = stream->getCodec();
+      logger("Getting ready to check sanity");
+      logger("AVStream codec is h264: " + QString::number(codec_id == avstream->codec->codec_id));
       //TODO: Check what happens if i don't do that. Especially when writing to a file.
       // As a matter of fact it's interesting what happens if I leave that and still will
       // be writing to a file. To be more precise I have no idea how to handle all that
       // dynamic streams when i have a file. Maybe I should implement commit function
-      // which locks all that dynamic behaviour up.
+      // which locks all that dynamic behavior up.
       //TODO: I remember that I should put GLOBAL_HEADER flag somewhere when it's
       // required
       avformat_write_header(format,0);
-      streams.append(stream);
-      return stream;
+      //streams.append(stream);
+      //return stream;
+      return 0;
    } catch(...) { return 0; }
 }
 

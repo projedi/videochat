@@ -44,16 +44,13 @@ public:
       //Doesn't use pixelFormat and sampleFormat from StreamInfo
       //if encoder is 0, uses x264 for video, mp2 for audio
       //Throws 1 if can't associate codec context with encoder
-      Stream(StreamInfo,AVCodec** encoder,Output* owner,int index) throw(int);
+      Stream(StreamInfo,AVCodec* encoder,Output* owner,int index) throw(int);
       ~Stream();
       void process(AVFrame*);
       StreamInfo info();
       //int getIndex();
       AVCodecContext* getCodec();
    private:
-      //Returns 0 on fail
-      AVPacket* encode(AVFrame*);
-      void sendToOwner(AVPacket*);
       MediaType type;
       union {
          SwsContext* scaler;

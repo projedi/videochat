@@ -20,7 +20,7 @@ Output::Stream* Player::addStream(StreamInfo info) {
    info.video.width = this->width();
    info.video.height = this->height();
    info.video.pixelFormat = PIX_FMT_RGB32;
-   Stream* stream = new Stream(info,&encoder,this,0);
+   Stream* stream = new Stream(info,encoder,this,0);
    streams.append(stream);
    return stream;
 }
