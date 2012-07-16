@@ -1,4 +1,13 @@
 #include "logging.h"
+#include <fstream>
+#include <ctime>
+
+using namespace std;
+
+namespace logging {
+   static fstream logger;
+   static clock_t startTime;
+}
 
 void logger(QString str) {
    clock_t curTime = clock();
@@ -6,7 +15,7 @@ void logger(QString str) {
    logging::logger << timestamp << ": " << str.toAscii().data() << endl;
 }
 
-void init() {
+void initLogging() {
 #if defined(LINUX)
    char *filename = "/tmp/videochat.log";
 #elif defined(WIN32)

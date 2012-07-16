@@ -14,10 +14,7 @@ CallScreen::CallScreen( QString contactName, QString remoteURI, QString localURI
    connect(ui->buttonEndCall,SIGNAL(clicked()),SLOT(rejectCall()));
    setWindowTitle("Conversation with " + contactName);
 
-   VideoHardware cameras;
-   AudioHardware microphones;
-   ui->comboCamera->addItems(cameras.getNames());
-   ui->comboMicrophone->addItems(microphones.getNames());
+   updateHardware();
    int camIndex = ui->comboCamera->currentIndex();
    int micIndex = ui->comboMicrophone->currentIndex();
 
@@ -28,6 +25,15 @@ CallScreen::CallScreen( QString contactName, QString remoteURI, QString localURI
    QtConcurrent::run(this,&CallScreen::setupCamera,camIndex);
    QtConcurrent::run(this,&CallScreen::setupMicrophone,micIndex);
    QtConcurrent::run(this,&CallScreen::setupRemote,localURI);
+}
+
+void CallScreen::updateHardware() {
+   if(cameras) delete cameras;
+   cameras = new VideoHardware();
+   if(microphones) delete microphones;
+   microphones = new AudioHardware();
+   ui->comboCamera->addItems(cameras->getNames());
+   ui->comboMicrophone->addItems(microphones->getNames());
 }
 
 void CallScreen::setupCamera(int camIndex) {
@@ -42,8 +48,8 @@ void CallScreen::setupCamera(int camIndex) {
    if(camera) delete camera;
    Input::Stream *cameraStream = 0;
    try {
-      camera = new InputGeneric( cameras.getFormats()[camIndex]
-                               , cameras.getFiles()[camIndex]);
+      camera = new InputGeneric( cameras->getFormats()[camIndex]
+                               , cameras->getFiles()[camIndex]);
       camera->setState(Input::Playing);
       if(camera->getStreams().count() < 1) logger("Camera doesn't have streams");
       else cameraStream  = camera->getStreams()[0];
@@ -72,11 +78,11 @@ void CallScreen::setupRemote(QString localURI) {
    try {
       remote = new InputGeneric("mpegts", localURI);
       remote->setState(Input::Playing);
-      List<Input::Stream*> streams = remote->getStreams();
+      QList< Input::Stream* > streams = remote->getStreams();
       if(streams.count() < 1) logger("Remote doesn't have streams");
       else {
          for(int i = 0; i < streams.count(); i++) {
-            if(streams[i].info().type == Video) {
+            if(streams[i]->info().type == Video) {
                remoteVideoStream = streams[i];
                break;
             }

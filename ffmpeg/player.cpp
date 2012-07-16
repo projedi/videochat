@@ -25,7 +25,15 @@ Output::Stream* Player::addStream(StreamInfo info) {
    return stream;
 }
 
+//TODO: Change index of all streams greater than removed
+void Player::removeStream(Output::Stream* stream) {
+   int strIndex = streams.indexOf(stream);
+   delete stream;
+   streams.removeAt(strIndex);
+}
+
 void Player::sendPacket(AVPacket* pkt) {
+   if(pkt->stream_index >= streams.count()) return;
    if(streams[pkt->stream_index]->info().type == Video) {
       m.lock();
       if(this->pkt) { av_free_packet(this->pkt); this->pkt=0; }

@@ -10,6 +10,7 @@ public:
    Player(QWidget* parent = 0);
    ~Player();
    Stream* addStream(StreamInfo);
+   void removeStream(Stream*);
    void sendPacket(AVPacket*);
 protected:
    void paintEvent(QPaintEvent*);

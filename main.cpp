@@ -5,7 +5,7 @@
 
 int main(int argc, char *argv[])
 {
-   init();
+   initLogging();
    QApplication a(argc, argv);
 
    avdevice_register_all();
