@@ -6,9 +6,15 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>160</width>
-    <height>259</height>
+    <width>220</width>
+    <height>229</height>
    </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
   </property>
   <property name="windowTitle">
    <string>VideochatMainWindow</string>
@@ -83,15 +89,25 @@ QPushButton:pressed {
 background: qradialgradient(cx: 0.4, cy: -0.1,
 fx: 0.4, fy: -0.1,
 radius: 1.35, stop: 0 #fff, stop: 1 #ccc);
+}
+
+QPushButton:disabled {
+color: #ddd;
+background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                  stop: 0 #D1D1D1, stop: 0.4 #CDCDCD,
+                                  stop: 0.5 #C8C8C8, stop: 1.0 #C3C3C3);
 }</string>
   </property>
   <widget class="QWidget" name="centralWidget">
    <widget class="QPushButton" name="buttonCall">
+    <property name="enabled">
+     <bool>false</bool>
+    </property>
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>200</y>
-      <width>141</width>
+      <y>170</y>
+      <width>101</width>
       <height>21</height>
      </rect>
     </property>
@@ -109,6 +125,13 @@ fx: 0.3, fy: -0.4,
 radius: 1.35, stop: 0 #0f0, stop: 1 #0b0);
 }
 
+QPushButton:disabled {
+color: #ddd;
+background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                  stop: 0 #D1D1D1, stop: 0.4 #CDCDCD,
+                                  stop: 0.5 #C8C8C8, stop: 1.0 #C3C3C3);
+}
+
 QPushButton:pressed {
 background: qradialgradient(cx: 0.4, cy: -0.1,
 fx: 0.4, fy: -0.1,
@@ -124,32 +147,48 @@ radius: 1.35, stop: 0 #0f0, stop: 1 #0c0);
      <rect>
       <x>10</x>
       <y>10</y>
-      <width>141</width>
-      <height>181</height>
+      <width>201</width>
+      <height>151</height>
      </rect>
     </property>
     <item>
      <property name="text">
-      <string>192.168.0.1</string>
+      <string>username@192.168.0.1/QXmpp</string>
      </property>
     </item>
     <item>
      <property name="text">
-      <string>192.168.0.2</string>
+      <string>username@192.168.0.2/QXmpp</string>
      </property>
     </item>
    </widget>
    <widget class="QPushButton" name="buttonExit">
     <property name="geometry">
      <rect>
-      <x>10</x>
-      <y>230</y>
-      <width>141</width>
+      <x>140</x>
+      <y>200</y>
+      <width>71</width>
       <height>21</height>
      </rect>
     </property>
     <property name="text">
      <string>Exit</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="buttonSendFile">
+    <property name="enabled">
+     <bool>false</bool>
+    </property>
+    <property name="geometry">
+     <rect>
+      <x>120</x>
+      <y>170</y>
+      <width>91</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Send file</string>
     </property>
    </widget>
   </widget>
