@@ -23,6 +23,7 @@ MainWindow::MainWindow(QWidget *parent): QMainWindow(parent), ui(new Ui::MainWin
    ui->setupUi(this);
    ui->contactList->setCurrentRow(0);
    connect(ui->buttonExit, SIGNAL(clicked()),SLOT(close()));
+   updateHardware();
 }
 
 MainWindow::~MainWindow() { delete ui; }
@@ -35,17 +36,16 @@ void MainWindow::connected() {
 }
 
 void MainWindow::startCall() {
-   /*
    if(ui->contactList->selectedItems().count() < 1) return;
    QString contactName = ui->contactList->selectedItems()[0]->text();
-   CallRequest req(contactName);
-   QAbstractSocket* socket = req.getSocket();
-   if(req.exec() == (int)QDialog::Accepted) {
-      CallScreen cs(req.getRemoteURI(),req.getRemoteURI(),req.getLocalURI(),socket,this);
-      cs.exec();
-   }
-   delete socket;
-   */
+
+   call = callManager.call(contactName);
+   connect( call, SIGNAL(connected()),this,SLOT(callConnected()));
+   connect( call, SIGNAL(finished()), this,SLOT(callFinished()));
+   connect( call, SIGNAL(audioModeChanged(QIODevice::OpenMode)), this
+          , SLOT(callAudioModeChanged(QIODevice::OpenMode)));
+   connect( call, SIGNAL(videoModeChanged(QIODevice::OpenMode)), this
+          , SLOT(callVideoModeChanged(QIODevice::OpenMode)));
 }
 
 void MainWindow::sendFile() {
@@ -69,7 +69,7 @@ void MainWindow::fileTransferRequest(QXmppTransferJob* job) {
    QString filename;
    switch(ret) {
       case QMessageBox::Yes:
-         filename = QFileDialog::getSaveFileName(this,"Save file","~"
+         filename = QFileDialog::getSaveFileName(this,"Save file",""
                                                         ,"Any file (*.*)");
          connect( job, SIGNAL(error(QXmppTransferJob::Error))
                 , this, SLOT(fileTransferError(QXmppTransferJob::Error)));
@@ -84,9 +84,54 @@ void MainWindow::fileTransferRequest(QXmppTransferJob* job) {
 }
 
 void MainWindow::fileTransferStarted(QXmppTransferJob* job) { }
-void MainWindow::fileTransferFinished(QXmppTransferJob* job) { }
+
+void MainWindow::fileTransferFinished(QXmppTransferJob* job) {
+   QMessageBox msgBox;
+   msgBox.setText("File transfer finished");
+   msgBox.exec();
+}
+
 void MainWindow::fileTransferProgress(qint64 done, qint64 total) { }
 void MainWindow::fileTransferError(QXmppTransferJob::Error error) { }
+
+void MainWindow::callReceived(QXmppCall* call) {
+   QMessageBox msgBox;
+   msgBox.setText("Requesting cal from user " + call->jid() + ". Accept?");
+   msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+   msgBox.setDefaultButton(QMessageBox::Yes);
+   int ret = msgBox.exec();
+   switch(ret) {
+      case QMessageBox::Yes:
+         this->call = call;
+         connect( call, SIGNAL(connected()),this,SLOT(callConnected()));
+         connect( call, SIGNAL(finished()), this,SLOT(callFinished()));
+         connect( call, SIGNAL(audioModeChanged(QIODevice::OpenMode)), this
+                , SLOT(callAudioModeChanged(QIODevice::OpenMode)));
+         connect( call, SIGNAL(videoModeChanged(QIODevice::OpenMode)), this
+                , SLOT(callVideoModeChanged(QIODevice::OpenMode)));
+         call->accept();
+         break;
+      case QMessageBox::No:
+         call->hangup();
+         break;
+   }
+}
+
+void MainWindow::callConnected() {
+   if(call->direction() == QXmppCall::OutgoingDirection) call->startVideo();
+}
+
+void MainWindow::callFinished() {
+   if(call->direction() == QXmppCall::OutgoingDirection) call->stopVideo();
+}
+
+//TODO: Implement
+void MainWindow::callAudioModeChanged(QIODevice::OpenMode) { }
+
+//TODO: Implement
+void MainWindow::callVideoModeChanged(QIODevice::OpenMode) {
+
+}
 
 void MainWindow::setupXmpp() {
    QXmppLogger::getLogger()->setLoggingType(QXmppLogger::StdoutLogging);
@@ -101,6 +146,8 @@ void MainWindow::setupXmpp() {
           , this, SLOT(fileTransferStarted(QXmppTransferJob*)));
    connect( &transferManager, SIGNAL(jobFinished(QXmppTransferJob*))
           , this, SLOT(fileTransferFinished(QXmppTransferJob*)));
+   connect( &callManager, SIGNAL(callReceived(QXmppCall*))
+          , this, SLOT(callReceived(QXmppCall*)));
    connect( &client, SIGNAL(connected()), this, SLOT(connected()));
    QXmppConfiguration config;
    config.setUser(USERNAME);
@@ -109,5 +156,69 @@ void MainWindow::setupXmpp() {
    config.setDomain(LOCALHOST);
    config.setPassword("password");
    client.addExtension(&transferManager);
+   client.addExtension(&callManager);
    client.connectToServer(config);
+}
+
+void MainWindow::updateHardware() {
+   if(cameras) delete cameras;
+   cameras = new VideoHardware();
+   if(microphones) delete microphones;
+   microphones = new AudioHardware();
+   ui->comboCamera->addItems(cameras->getNames());
+   ui->comboMicrophone->addItems(microphones->getNames());
+}
+
+void MainWindow::setupCamera(int camIndex) {
+   if(serverVideoStream) {
+      serverServer->removeStream(serverVideoStream);
+      serverVideoStream = 0;
+   }
+   if(camera) delete camera;
+   InputStream *cameraStream = 0;
+   try {
+      camera = new InputGeneric( cameras->getFiles()[camIndex]
+                               , cameras->getFormats()[camIndex]);
+      camera->setState(Input::Playing);
+      if(camera->getStreams().count() < 1) logger("Camera doesn't have streams");
+      else cameraStream  = camera->getStreams()[0];
+   } catch(...) { logger("Can't open camera"); camera = 0; }
+   if(serverServer && cameraStream) {
+      serverVideoStream = serverServer->addStream(cameraStream->info());
+      cameraStream->subscribe(serverVideoStream);
+   }
+}
+
+void MainWindow::setupMicrophone(int micIndex) {
+   if(microphone) delete microphone;
+}
+
+void MainWindow::setupRemote(QString localURI) {
+   if(playerVideoStream) {
+      ui->player->removeStream(playerVideoStream);
+      playerVideoStream = 0;
+   }
+   if(remote) delete remote;
+   InputStream *remoteVideoStream = 0;
+   try {
+      remote = new InputGeneric(localURI, "mjpeg");
+      logger("Constructed remote");
+      remote->setState(Input::Playing);
+      logger("Set state to play");
+      QList<InputStream*> streams = remote->getStreams();
+      if(streams.count() < 1) logger("Remote doesn't have streams");
+      else {
+         for(int i = 0; i < streams.count(); i++) {
+            if(streams[i]->info().type == Video) {
+               remoteVideoStream = streams[i];
+               break;
+            }
+         }
+         if(!remoteVideoStream) logger("Remote doesn't have video stream");
+      }
+   } catch(...) { logger("Can't open remote"); remote = 0; }
+   if(ui->player && remoteVideoStream) {
+      playerVideoStream = ui->player->addStream(remoteVideoStream->info());
+      remoteVideoStream->subscribe(playerVideoStream);
+   }
 }

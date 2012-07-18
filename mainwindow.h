@@ -7,6 +7,9 @@
 #include <qxmpp/QXmppMessage.h>
 #include <qxmpp/QXmppClient.h>
 #include <qxmpp/QXmppTransferManager.h>
+#include <qxmpp/QXmppCallManager.h>
+#include <qxmpp/QXmppRtpChannel.h>
+#include "ffmpeg.h"
 
 namespace Ui { class MainWindow; }
 
@@ -36,10 +39,26 @@ private slots:
    void fileTransferFinished(QXmppTransferJob*);
    void fileTransferProgress(qint64,qint64);
    void fileTransferError(QXmppTransferJob::Error);
+   void callReceived(QXmppCall*);
+   void callConnected();
+   void callFinished();
+   void callAudioModeChanged(QIODevice::OpenMode);
+   void callVideoModeChanged(QIODevice::OpenMode);
 private:
    void setupXmpp();
+   void updateHardware();
+   void setupRemote(QString localURI);
+   void setupCamera(int camIndex);
+   void setupMicrophone(int micIndex);
    Ui::MainWindow *ui;
    QXmppClient client;
    QXmppServer server;
    QXmppTransferManager transferManager;
+   QXmppCallManager callManager;
+   QXmppCall* call;
+   Input *remote, *camera, *microphone;
+   Output *serverServer;
+   OutputStream *serverVideoStream, *playerVideoStream;
+   VideoHardware* cameras = 0;
+   AudioHardware* microphones = 0;
 };
