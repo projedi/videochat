@@ -16,9 +16,8 @@ public:
    ~MyPasswordChecker() { }
    bool hasGetPassword() const { return true; }
 protected:
-   QXmppPasswordReply::Error getPassword(const QXmppPasswordRequest &request
-                                        , QString& password) {
-      password = "password";
+   QXmppPasswordReply::Error getPassword(const QXmppPasswordRequest&,QString& pass) {
+      pass = "password";
       return QXmppPasswordReply::NoError;
    }
 };

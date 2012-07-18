@@ -51,7 +51,7 @@ void MainWindow::startCall() {
 void MainWindow::sendFile() {
    if(ui->contactList->selectedItems().count() < 1) return;
    QString contactName = ui->contactList->selectedItems()[0]->text();
-   QString filename = QFileDialog::getOpenFileName(this,"Open file","~","Any file (*.*)");
+   QString filename = QFileDialog::getOpenFileName(this,"Open file","", "Any file (*.*)");
    if(filename.isNull()) return;
    QXmppTransferJob* job = transferManager.sendFile(contactName,filename);
    connect( job, SIGNAL(error(QXmppTransferJob::Error))
@@ -89,8 +89,8 @@ void MainWindow::fileTransferProgress(qint64 done, qint64 total) { }
 void MainWindow::fileTransferError(QXmppTransferJob::Error error) { }
 
 void MainWindow::setupXmpp() {
+   QXmppLogger::getLogger()->setLoggingType(QXmppLogger::StdoutLogging);
    server.setDomain(LOCALHOST);
-   MyPasswordChecker passCheck;
    server.setPasswordChecker(new MyPasswordChecker());
    server.listenForClients(QHostAddress(LOCALHOST));
    server.listenForServers();
@@ -106,6 +106,8 @@ void MainWindow::setupXmpp() {
    config.setUser(USERNAME);
    //Uses actual IP address
    config.setHost(LOCALHOST);
+   config.setDomain(LOCALHOST);
    config.setPassword("password");
+   client.addExtension(&transferManager);
    client.connectToServer(config);
 }

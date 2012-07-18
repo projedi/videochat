@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>220</width>
+    <width>239</width>
     <height>229</height>
    </rect>
   </property>
@@ -107,7 +107,7 @@ background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
      <rect>
       <x>10</x>
       <y>170</y>
-      <width>101</width>
+      <width>121</width>
       <height>21</height>
      </rect>
     </property>
@@ -147,25 +147,25 @@ radius: 1.35, stop: 0 #0f0, stop: 1 #0c0);
      <rect>
       <x>10</x>
       <y>10</y>
-      <width>201</width>
+      <width>221</width>
       <height>151</height>
      </rect>
     </property>
     <item>
      <property name="text">
-      <string>username@192.168.0.1/QXmpp</string>
+      <string>username@192.168.0.101/QXmpp</string>
      </property>
     </item>
     <item>
      <property name="text">
-      <string>username@192.168.0.2/QXmpp</string>
+      <string>username@192.168.0.102/QXmpp</string>
      </property>
     </item>
    </widget>
    <widget class="QPushButton" name="buttonExit">
     <property name="geometry">
      <rect>
-      <x>140</x>
+      <x>160</x>
       <y>200</y>
       <width>71</width>
       <height>21</height>
@@ -181,7 +181,7 @@ radius: 1.35, stop: 0 #0f0, stop: 1 #0c0);
     </property>
     <property name="geometry">
      <rect>
-      <x>120</x>
+      <x>140</x>
       <y>170</y>
       <width>91</width>
       <height>21</height>
