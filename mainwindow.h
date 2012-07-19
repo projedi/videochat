@@ -32,6 +32,7 @@ public:
    ~MainWindow();
 private slots:
    void connected();
+   void disconnected();
    void startCall();
    void sendFile();
    void fileTransferRequest(QXmppTransferJob*);
@@ -59,6 +60,6 @@ private:
    Input *remote, *camera, *microphone;
    Output *serverServer;
    OutputStream *serverVideoStream, *playerVideoStream;
-   VideoHardware* cameras = 0;
-   AudioHardware* microphones = 0;
+   VideoHardware* cameras;
+   AudioHardware* microphones;
 };

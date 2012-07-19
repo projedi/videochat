@@ -22,8 +22,12 @@ MainWindow::MainWindow(QWidget *parent): QMainWindow(parent), ui(new Ui::MainWin
    ui->setupUi(this);
    ui->contactList->setCurrentRow(0);
    connect(ui->buttonExit, SIGNAL(clicked()),SLOT(close()));
+   connect(ui->buttonCall, SIGNAL(clicked()), SLOT(startCall()));
+   connect(ui->buttonSendFile, SIGNAL(clicked()), SLOT(sendFile()));
    ui->labelStatus->setText("Connecting");
    setupXmpp();
+   cameras = 0;
+   microphones = 0;
    updateHardware();
 }
 
@@ -33,8 +37,12 @@ void MainWindow::connected() {
    ui->buttonCall->setEnabled(true);
    ui->buttonSendFile->setEnabled(true);
    ui->labelStatus->setText("Connected");
-   connect(ui->buttonCall, SIGNAL(clicked()), SLOT(startCall()));
-   connect(ui->buttonSendFile, SIGNAL(clicked()), SLOT(sendFile()));
+}
+
+void MainWindow::disconnected() {
+   ui->buttonCall->setEnabled(false);
+   ui->buttonSendFile->setEnabled(false);
+   ui->labelStatus->setText("Connecting");
 }
 
 void MainWindow::startCall() {
@@ -166,6 +174,7 @@ void MainWindow::setupXmpp() {
    connect( &callManager, SIGNAL(callReceived(QXmppCall*))
           , this, SLOT(callReceived(QXmppCall*)));
    connect( &client, SIGNAL(connected()), this, SLOT(connected()));
+   connect( &client, SIGNAL(disconnected()), this, SLOT(disconnected()));
    QXmppConfiguration config;
    config.setUser(USERNAME);
    //Uses actual IP address
