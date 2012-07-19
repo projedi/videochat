@@ -121,7 +121,7 @@ void MainWindow::fileTransferError(QXmppTransferJob::Error error) { }
 
 void MainWindow::callReceived(QXmppCall* call) {
    QMessageBox msgBox;
-   msgBox.setText("Requesting cal from user " + call->jid() + ". Accept?");
+   msgBox.setText("Requesting call from user " + call->jid() + ". Accept?");
    msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
    msgBox.setDefaultButton(QMessageBox::Yes);
    int ret = msgBox.exec();
