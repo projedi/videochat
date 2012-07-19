@@ -19,10 +19,11 @@
 using namespace std;
 
 MainWindow::MainWindow(QWidget *parent): QMainWindow(parent), ui(new Ui::MainWindow) {
-   setupXmpp();
    ui->setupUi(this);
    ui->contactList->setCurrentRow(0);
    connect(ui->buttonExit, SIGNAL(clicked()),SLOT(close()));
+   ui->labelStatus->setText("Connecting");
+   setupXmpp();
    updateHardware();
 }
 
@@ -31,6 +32,7 @@ MainWindow::~MainWindow() { delete ui; }
 void MainWindow::connected() {
    ui->buttonCall->setEnabled(true);
    ui->buttonSendFile->setEnabled(true);
+   ui->labelStatus->setText("Connected");
    connect(ui->buttonCall, SIGNAL(clicked()), SLOT(startCall()));
    connect(ui->buttonSendFile, SIGNAL(clicked()), SLOT(sendFile()));
 }
@@ -53,6 +55,7 @@ void MainWindow::sendFile() {
    QString contactName = ui->contactList->selectedItems()[0]->text();
    QString filename = QFileDialog::getOpenFileName(this,"Open file","", "Any file (*.*)");
    if(filename.isNull()) return;
+   ui->labelStatus->setText("Trying to send file");
    QXmppTransferJob* job = transferManager.sendFile(contactName,filename);
    connect( job, SIGNAL(error(QXmppTransferJob::Error))
           , this, SLOT(fileTransferError(QXmppTransferJob::Error)));
@@ -71,6 +74,8 @@ void MainWindow::fileTransferRequest(QXmppTransferJob* job) {
       case QMessageBox::Yes:
          filename = QFileDialog::getSaveFileName(this,"Save file",""
                                                         ,"Any file (*.*)");
+         if(filename.isNull()) job->abort();
+         ui->labelStatus->setText("Trying to receive file");
          connect( job, SIGNAL(error(QXmppTransferJob::Error))
                 , this, SLOT(fileTransferError(QXmppTransferJob::Error)));
          connect( job, SIGNAL(progress(qint64,qint64))
@@ -83,15 +88,27 @@ void MainWindow::fileTransferRequest(QXmppTransferJob* job) {
    }
 }
 
-void MainWindow::fileTransferStarted(QXmppTransferJob* job) { }
-
-void MainWindow::fileTransferFinished(QXmppTransferJob* job) {
-   QMessageBox msgBox;
-   msgBox.setText("File transfer finished");
-   msgBox.exec();
+void MainWindow::fileTransferStarted(QXmppTransferJob* job) {
+   ui->labelStatus->hide();
+   ui->progressBarStatus->show();
+   ui->progressBarStatus->setMinimum(0);
+   ui->progressBarStatus->setMaximum(job->fileInfo().size());
+   ui->progressBarStatus->setValue(0);
 }
 
-void MainWindow::fileTransferProgress(qint64 done, qint64 total) { }
+void MainWindow::fileTransferFinished(QXmppTransferJob* job) {
+   ui->progressBarStatus->hide();
+   ui->labelStatus->show();
+   ui->labelStatus->setText("Connected");
+   //QMessageBox msgBox;
+   //msgBox.setText("File transfer finished");
+   //msgBox.exec();
+}
+
+void MainWindow::fileTransferProgress(qint64 done, qint64 total) {
+   ui->progressBarStatus->setValue(done);
+}
+
 void MainWindow::fileTransferError(QXmppTransferJob::Error error) { }
 
 void MainWindow::callReceived(QXmppCall* call) {
