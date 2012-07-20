@@ -27,7 +27,7 @@ OutputStream* Player::addStream(StreamInfo info) {
       info.video.height = this->height();
       info.video.pixelFormat = PIX_FMT_RGB32;
       info.bitrate = 0;
-      stream = new OutputStream(info,encoder,this,streams.count());
+      stream = new FFmpegOutputStream(info,encoder,this,streams.count());
       streams.append(stream);
    }
    return stream;

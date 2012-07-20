@@ -3,13 +3,13 @@
 #include "ffmpeg.h"
 #include <qxmpp/QXmppCallManager.h>
 
-class RtpOutputStream: public OutputStream, public QObject {
+class RtpOutputStream: public QObject, public OutputStream {
    Q_OBJECT
 public:
    RtpOutputStream(QXmppCall*);
    ~RtpOutputStream();
    StreamInfo info();
    void process(AVFrame*);
-public slots:
-   void callVideoModeChanged(QIODevice::OpenMode);
+private:
+   QXmppCall* call;
 };

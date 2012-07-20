@@ -26,7 +26,8 @@ SOURCES += main.cpp \
            ffmpeg/input.cpp \
            ffmpeg/output.cpp \
            ffmpeg/hardware.cpp \
-           ffmpeg/player.cpp
+           ffmpeg/player.cpp \
+           streaming.cpp
 
 HEADERS  += logging.h \
             mainwindow.h \
@@ -37,7 +38,8 @@ HEADERS  += logging.h \
             ffmpeg/input.h \
             ffmpeg/output.h \
             ffmpeg/hardware.h \
-            player.h
+            player.h \
+            streaming.h
 
 FORMS    += mainwindow.ui \
             callrequest.ui \

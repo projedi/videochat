@@ -4,10 +4,16 @@
 
 class OutputStream {
 public:
+   virtual void process(AVFrame* frame) = 0;
+   virtual StreamInfo info() = 0;
+};
+
+class FFmpegOutputStream: public OutputStream {
+public:
    enum State { Opened, Closed };
    //if encoder is 0, uses x264 for video, mp2 for audio
-   OutputStream(StreamInfo,AVCodec* encoder,Output* owner,int index);
-   ~OutputStream();
+   FFmpegOutputStream(StreamInfo,AVCodec* encoder,Output* owner,int index);
+   ~FFmpegOutputStream();
    StreamInfo info();
    State getState();
    void process(AVFrame*);

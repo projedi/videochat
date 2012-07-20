@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QMainWindow>
+#include <QTimer>
 //#include <QTcpServer>
 #include <qxmpp/QXmppServer.h>
 #include <qxmpp/QXmppPasswordChecker.h>
@@ -46,11 +47,9 @@ private slots:
    void callAudioModeChanged(QIODevice::OpenMode);
    void callVideoModeChanged(QIODevice::OpenMode);
    void readFrames();
-   void writeFrame();
 private:
    void setupXmpp();
    void updateHardware();
-   void setupRemote(QString localURI);
    void setupCamera(int camIndex);
    void setupMicrophone(int micIndex);
    Ui::MainWindow *ui;
@@ -62,4 +61,6 @@ private:
    OutputStream *serverVideoStream, *playerVideoStream;
    VideoHardware* cameras;
    AudioHardware* microphones;
+   QTimer timer;
+   QXmppCall* call;
 };

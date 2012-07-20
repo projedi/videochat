@@ -1,12 +1,10 @@
 #include "logging.h"
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include "callrequest.h"
-#include "callresponse.h"
-#include "callscreen.h"
 #include <QtConcurrentRun>
 #include <QMessageBox>
 #include <QFileDialog>
+#include "streaming.h"
 
 #if defined(LINUX)
 #define LOCALHOST "192.168.0.102"
@@ -159,8 +157,8 @@ void MainWindow::callVideoModeChanged(QIODevice::OpenMode mode) {
    QXmppCall* call = static_cast<QXmppCall*>(sender());
    if(mode & QIODevice::ReadOnly) {
       //TODO: Open webcam
-      setupCamera(ui->comboCamera->currentIndex());
       serverVideoStream = new RtpOutputStream(call);
+      setupCamera(ui->comboCamera->currentIndex());
       QXmppVideoFormat videoFormat;
       videoFormat.setFrameRate(30);
       videoFormat.setFrameSize(QSize(640,480));
@@ -172,18 +170,24 @@ void MainWindow::callVideoModeChanged(QIODevice::OpenMode mode) {
       }
    } else if(mode & QIODevice::NotOpen) {
       //TODO: Close webcam
+      delete camera;
       disconnect(&timer, SIGNAL(timeout()), this, SLOT(readFrames()));
       timer.stop();
    }
 }
 
-void readFrames() {
+void MainWindow::readFrames() {
    QXmppVideoFrame qframe;
    foreach(QXmppVideoFrame posFrame, call->videoChannel()->readFrames()) {
       if(posFrame.isValid()) qframe = posFrame;
    }
-   //TODO: convert qframe to frame
+   AVFrame* frame = avcodec_alloc_frame();
+   frame->linesize[0] = qframe.bytesPerLine();
+   frame->data[0] = (uchar*) qframe.bits();
+   frame->width = qframe.width();
+   frame->height = qframe.height();
    playerVideoStream->process(frame);
+   av_free(frame);
 }
 
 void MainWindow::setupXmpp() {
@@ -233,41 +237,11 @@ void MainWindow::setupCamera(int camIndex) {
       if(camera->getStreams().count() < 1) logger("Camera doesn't have streams");
       else cameraStream  = camera->getStreams()[0];
    } catch(...) { logger("Can't open camera"); camera = 0; }
-   if(cameraStream) {
+   if(cameraStream && serverVideoStream) {
       cameraStream->subscribe(serverVideoStream);
    }
 }
 
 void MainWindow::setupMicrophone(int micIndex) {
    if(microphone) delete microphone;
-}
-
-void MainWindow::setupRemote(QString localURI) {
-   if(playerVideoStream) {
-      ui->player->removeStream(playerVideoStream);
-      playerVideoStream = 0;
-   }
-   if(remote) delete remote;
-   InputStream *remoteVideoStream = 0;
-   try {
-      remote = new InputGeneric(localURI, "mjpeg");
-      logger("Constructed remote");
-      remote->setState(Input::Playing);
-      logger("Set state to play");
-      QList<InputStream*> streams = remote->getStreams();
-      if(streams.count() < 1) logger("Remote doesn't have streams");
-      else {
-         for(int i = 0; i < streams.count(); i++) {
-            if(streams[i]->info().type == Video) {
-               remoteVideoStream = streams[i];
-               break;
-            }
-         }
-         if(!remoteVideoStream) logger("Remote doesn't have video stream");
-      }
-   } catch(...) { logger("Can't open remote"); remote = 0; }
-   if(ui->player && remoteVideoStream) {
-      playerVideoStream = ui->player->addStream(remoteVideoStream->info());
-      remoteVideoStream->subscribe(playerVideoStream);
-   }
 }

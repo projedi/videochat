@@ -2,7 +2,7 @@
 #include <iostream>
 using namespace std;
 
-OutputStream::OutputStream(StreamInfo info,AVCodec* encoder,Output* owner,int index) {
+FFmpegOutputStream::FFmpegOutputStream(StreamInfo info,AVCodec* encoder,Output* owner,int index) {
    this->owner = owner;
    this->index = index;
    type = info.type;
@@ -45,13 +45,13 @@ OutputStream::OutputStream(StreamInfo info,AVCodec* encoder,Output* owner,int in
    }
 }
 
-OutputStream::~OutputStream() {
+FFmpegOutputStream::~FFmpegOutputStream() {
    if(codec) avcodec_close(codec);
    if(type == Video && scaler) sws_freeContext(scaler);
    if(type == Audio && resampler) swr_free(&resampler);
 }
 
-void OutputStream::process(AVFrame* frame) {
+void FFmpegOutputStream::process(AVFrame* frame) {
    if(!(type == Video || type == Audio)) return;
    AVFrame* newFrame = avcodec_alloc_frame();
    AVPacket* pkt = new AVPacket();
@@ -84,7 +84,7 @@ void OutputStream::process(AVFrame* frame) {
    owner->sendPacket(pkt);
 }
 
-StreamInfo OutputStream::info() {
+StreamInfo FFmpegOutputStream::info() {
    StreamInfo info;
    info.type = type;
    if(type == Video) {
@@ -102,7 +102,7 @@ StreamInfo OutputStream::info() {
    return info;
 }
 
-AVCodecContext* OutputStream::getCodec() { return codec; }
+AVCodecContext* FFmpegOutputStream::getCodec() { return codec; }
 
 Output::~Output() {
    for(int i = 0; i < streams.count(); i++) { if(streams[i]) delete streams[i]; }
@@ -138,7 +138,7 @@ OutputStream* OutputGeneric::addStream(StreamInfo info) {
                        : CODEC_ID_NONE;
       //TODO: what will it do when CODEC_ID_NONE
       AVCodec *encoder = avcodec_find_encoder(codec_id);
-      OutputStream* stream = new OutputStream(info,encoder,this,format->nb_streams);
+      FFmpegOutputStream* stream = new FFmpegOutputStream(info,encoder,this,format->nb_streams);
       AVStream* avstream = avformat_new_stream(format,encoder);
       avstream->codec = stream->getCodec();
       //TODO: Check what happens if i don't do that. Especially when writing to a file.
