@@ -3,12 +3,12 @@ QT += core gui network
 win32 {
    LIBS += -L$$PWD/3rd-party/lib -lavcodec -lavformat -lavdevice \
                                  -lswscale -lavutil -lswresample \
-                                 -lqxmpp0 -ldnsapi -lws2_32
+                                 -lqxmpp0_d -ldnsapi -lws2_32
    INCLUDEPATH += $$PWD/3rd-party/include
    DEFINES += WIN32
 }
 unix {
-   LIBS += -lavcodec -lavformat -lavdevice -lswscale -lavutil -lswresample -lqxmpp
+   LIBS += -lavcodec -lavformat -lavdevice -lswscale -lavutil -lswresample -lqxmpp_d
    DEFINES += LINUX
 }
 

@@ -141,11 +141,13 @@ void MainWindow::callReceived(QXmppCall* call) {
 }
 
 void MainWindow::callConnected() {
+   qDebug() << "Call connected";
    QXmppCall* call = static_cast<QXmppCall*>(sender());
    if(call->direction() == QXmppCall::OutgoingDirection) call->startVideo();
 }
 
 void MainWindow::callFinished() {
+   qDebug() << "Call finished";
    QXmppCall* call = static_cast<QXmppCall*>(sender());
    if(call->direction() == QXmppCall::OutgoingDirection) call->stopVideo();
 }
@@ -154,10 +156,12 @@ void MainWindow::callFinished() {
 void MainWindow::callAudioModeChanged(QIODevice::OpenMode) { }
 
 void MainWindow::callVideoModeChanged(QIODevice::OpenMode mode) {
+   qDebug() << "Call video mode changed";
    QXmppCall* call = static_cast<QXmppCall*>(sender());
-   if(mode & QIODevice::ReadOnly) {
+   if(mode & QIODevice::ReadOnly) { qDebug() << "Starting the shows";
       //TODO: Open webcam
       serverVideoStream = new RtpOutputStream(call);
+      camera = 0;
       setupCamera(ui->comboCamera->currentIndex());
       QXmppVideoFormat videoFormat;
       videoFormat.setFrameRate(30);
@@ -191,7 +195,7 @@ void MainWindow::readFrames() {
 }
 
 void MainWindow::setupXmpp() {
-   QXmppLogger::getLogger()->setLoggingType(QXmppLogger::StdoutLogging);
+   //QXmppLogger::getLogger()->setLoggingType(QXmppLogger::StdoutLogging);
    server.setDomain(LOCALHOST);
    server.setPasswordChecker(new MyPasswordChecker());
    server.listenForClients(QHostAddress(LOCALHOST));
