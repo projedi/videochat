@@ -143,19 +143,47 @@ void MainWindow::callReceived(QXmppCall* call) {
 }
 
 void MainWindow::callConnected() {
+   QXmppCall* call = static_cast<QXmppCall*>(sender());
    if(call->direction() == QXmppCall::OutgoingDirection) call->startVideo();
 }
 
 void MainWindow::callFinished() {
+   QXmppCall* call = static_cast<QXmppCall*>(sender());
    if(call->direction() == QXmppCall::OutgoingDirection) call->stopVideo();
 }
 
 //TODO: Implement
 void MainWindow::callAudioModeChanged(QIODevice::OpenMode) { }
 
-//TODO: Implement
-void MainWindow::callVideoModeChanged(QIODevice::OpenMode) {
+void MainWindow::callVideoModeChanged(QIODevice::OpenMode mode) {
+   QXmppCall* call = static_cast<QXmppCall*>(sender());
+   if(mode & QIODevice::ReadOnly) {
+      //TODO: Open webcam
+      setupCamera(ui->comboCamera->currentIndex());
+      serverVideoStream = new RtpOutputStream(call);
+      QXmppVideoFormat videoFormat;
+      videoFormat.setFrameRate(30);
+      videoFormat.setFrameSize(QSize(640,480));
+      videoFormat.setPixelFormat(QXmppVideoFrame::Format_YUV420P);
+      call->videoChannel()->setEncoderFormat(videoFormat);
+      if(!timer.isActive()) {
+         connect(&timer, SIGNAL(timeout()), this, SLOT(readFrames()));
+         timer.start();
+      }
+   } else if(mode & QIODevice::NotOpen) {
+      //TODO: Close webcam
+      disconnect(&timer, SIGNAL(timeout()), this, SLOT(readFrames()));
+      timer.stop();
+   }
+}
 
+void readFrames() {
+   QXmppVideoFrame qframe;
+   foreach(QXmppVideoFrame posFrame, call->videoChannel()->readFrames()) {
+      if(posFrame.isValid()) qframe = posFrame;
+   }
+   //TODO: convert qframe to frame
+   playerVideoStream->process(frame);
 }
 
 void MainWindow::setupXmpp() {
@@ -196,10 +224,6 @@ void MainWindow::updateHardware() {
 }
 
 void MainWindow::setupCamera(int camIndex) {
-   if(serverVideoStream) {
-      serverServer->removeStream(serverVideoStream);
-      serverVideoStream = 0;
-   }
    if(camera) delete camera;
    InputStream *cameraStream = 0;
    try {
@@ -209,8 +233,7 @@ void MainWindow::setupCamera(int camIndex) {
       if(camera->getStreams().count() < 1) logger("Camera doesn't have streams");
       else cameraStream  = camera->getStreams()[0];
    } catch(...) { logger("Can't open camera"); camera = 0; }
-   if(serverServer && cameraStream) {
-      serverVideoStream = serverServer->addStream(cameraStream->info());
+   if(cameraStream) {
       cameraStream->subscribe(serverVideoStream);
    }
 }

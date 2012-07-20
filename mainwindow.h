@@ -45,6 +45,8 @@ private slots:
    void callFinished();
    void callAudioModeChanged(QIODevice::OpenMode);
    void callVideoModeChanged(QIODevice::OpenMode);
+   void readFrames();
+   void writeFrame();
 private:
    void setupXmpp();
    void updateHardware();
@@ -56,9 +58,7 @@ private:
    QXmppServer server;
    QXmppTransferManager transferManager;
    QXmppCallManager callManager;
-   QXmppCall* call;
-   Input *remote, *camera, *microphone;
-   Output *serverServer;
+   Input *camera, *microphone;
    OutputStream *serverVideoStream, *playerVideoStream;
    VideoHardware* cameras;
    AudioHardware* microphones;
