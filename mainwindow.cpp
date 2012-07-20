@@ -168,6 +168,13 @@ void MainWindow::callVideoModeChanged(QIODevice::OpenMode mode) {
       videoFormat.setFrameSize(QSize(640,480));
       videoFormat.setPixelFormat(QXmppVideoFrame::Format_YUV420P);
       call->videoChannel()->setEncoderFormat(videoFormat);
+      StreamInfo info;
+      info.type = Video;
+      info.video.width = 640;
+      info.video.height = 480;
+      info.video.fps = 30;
+      info.video.pixelFormat = PIX_FMT_YUV420P;
+      playerVideoStream = ui->player->addStream(info);
       if(!timer.isActive()) {
          connect(&timer, SIGNAL(timeout()), this, SLOT(readFrames()));
          timer.start();
@@ -182,7 +189,9 @@ void MainWindow::callVideoModeChanged(QIODevice::OpenMode mode) {
 
 void MainWindow::readFrames() {
    QXmppVideoFrame qframe;
-   foreach(QXmppVideoFrame posFrame, call->videoChannel()->readFrames()) {
+   QList<QXmppVideoFrame> frames = call->videoChannel()->readFrames();
+   if(frames.count() == 0) return;
+   foreach(QXmppVideoFrame posFrame, frames) {
       if(posFrame.isValid()) qframe = posFrame;
    }
    AVFrame* frame = avcodec_alloc_frame();
