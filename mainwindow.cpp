@@ -22,6 +22,7 @@ MainWindow::MainWindow(QWidget *parent): QMainWindow(parent), ui(new Ui::MainWin
    ui->contactList->setCurrentRow(0);
    connect(ui->buttonExit, SIGNAL(clicked()),SLOT(shutdown()));
    connect(ui->buttonCall, SIGNAL(clicked()), SLOT(startCall()));
+   connect(ui->buttonHangup, SIGNAL(clicked()), SLOT(stopCall()));
    connect(ui->buttonSendFile, SIGNAL(clicked()), SLOT(sendFile()));
    ui->labelStatus->setText("Connecting");
    setupXmpp();
@@ -62,6 +63,13 @@ void MainWindow::startCall() {
           , SLOT(callAudioModeChanged(QIODevice::OpenMode)));
    connect( call, SIGNAL(videoModeChanged(QIODevice::OpenMode)), this
           , SLOT(callVideoModeChanged(QIODevice::OpenMode)));
+}
+
+void MainWindow::stopCall() {
+   call->hangup();
+   call->disconnect();
+   call = 0;
+   ui->player->reset();
 }
 
 void MainWindow::sendFile() {
@@ -185,12 +193,16 @@ void MainWindow::callVideoModeChanged(QIODevice::OpenMode mode) {
          connect(&timer, SIGNAL(timeout()), this, SLOT(readFrames()));
          timer.start();
       }
+      ui->buttonCall->hide();
+      ui->buttonHangup->show();
    } else if(mode == QIODevice::NotOpen) {
       qDebug() << "Closing device";
       //TODO: Close webcam
       delete camera;
       disconnect(&timer, SIGNAL(timeout()), this, SLOT(readFrames()));
       timer.stop();
+      ui->buttonHangup->hide();
+      ui->buttonCall->show();
    } else {
       qDebug() << "Got some oher opennmode" << (int)mode;
    }

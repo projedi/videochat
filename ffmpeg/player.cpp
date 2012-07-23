@@ -50,13 +50,20 @@ void Player::sendPacket(AVPacket* pkt) {
    }
 }
 
+void Player::reset() {
+   videoPacket = 0;
+}
+
 void Player::paintEvent(QPaintEvent*) {
    paintMutex.lock();
+   QPainter painter(this);
    if(videoPacket) {
-      QPainter painter(this);
       QImage image = QImage( videoPacket->data, this->width(), this->height()
                            , QImage::Format_RGB32);
       painter.drawImage(QPointF(0,0),image);
+   } else {
+      painter.setPen(Qt::NoPen);
+      painter.drawRect(this->rect());
    }
    paintMutex.unlock();
 }

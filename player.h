@@ -11,6 +11,7 @@ public:
    OutputStream* addStream(StreamInfo);
    void removeStream(OutputStream*);
    void sendPacket(AVPacket*);
+   void reset();
 protected:
    void paintEvent(QPaintEvent*);
 private:

@@ -36,6 +36,7 @@ private slots:
    void connected();
    void disconnected();
    void startCall();
+   void stopCall();
    void sendFile();
    void fileTransferRequest(QXmppTransferJob*);
    void fileTransferStarted(QXmppTransferJob*);
