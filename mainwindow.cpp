@@ -141,13 +141,11 @@ void MainWindow::callReceived(QXmppCall* call) {
 }
 
 void MainWindow::callConnected() {
-   qDebug() << "Call connected";
    QXmppCall* call = static_cast<QXmppCall*>(sender());
    if(call->direction() == QXmppCall::OutgoingDirection) call->startVideo();
 }
 
 void MainWindow::callFinished() {
-   qDebug() << "Call finished";
    QXmppCall* call = static_cast<QXmppCall*>(sender());
    if(call->direction() == QXmppCall::OutgoingDirection) call->stopVideo();
 }
@@ -156,10 +154,8 @@ void MainWindow::callFinished() {
 void MainWindow::callAudioModeChanged(QIODevice::OpenMode) { }
 
 void MainWindow::callVideoModeChanged(QIODevice::OpenMode mode) {
-   qDebug() << "Call video mode changed";
    QXmppCall* call = static_cast<QXmppCall*>(sender());
-   if(mode & QIODevice::ReadOnly) { qDebug() << "Starting the shows";
-      //TODO: Open webcam
+   if(mode & QIODevice::ReadOnly) {
       serverVideoStream = new RtpOutputStream(call);
       camera = 0;
       setupCamera(ui->comboCamera->currentIndex());
@@ -191,7 +187,6 @@ void MainWindow::readFrames() {
    QXmppVideoFrame qframe;
    QList<QXmppVideoFrame> frames = call->videoChannel()->readFrames();
    if(frames.count() == 0) return;
-   qDebug("There were exactly %d frames read", frames.count());
    foreach(QXmppVideoFrame posFrame, frames) {
       if(posFrame.isValid()) qframe = posFrame;
    }
@@ -200,6 +195,7 @@ void MainWindow::readFrames() {
    frame->data[0] = (uchar*) qframe.bits();
    frame->width = qframe.width();
    frame->height = qframe.height();
+   frame->format = PIX_FMT_RGB24;
    playerVideoStream->process(frame);
    av_free(frame);
 }
