@@ -33,6 +33,7 @@ void RtpOutputStream::process(AVFrame* frame) {
                          , QXmppVideoFrame::Format_RGB24);
    uchar *data = (uchar*) qframe.bits();
    memcpy(data, newFrame->data[0], size);
+   avpicture_free((AVPicture*)newFrame);
    av_free(newFrame);
    call->videoChannel()->writeFrame(qframe);
 }

@@ -191,6 +191,7 @@ void MainWindow::readFrames() {
    QXmppVideoFrame qframe;
    QList<QXmppVideoFrame> frames = call->videoChannel()->readFrames();
    if(frames.count() == 0) return;
+   qDebug("There were exactly %d frames read", frames.count());
    foreach(QXmppVideoFrame posFrame, frames) {
       if(posFrame.isValid()) qframe = posFrame;
    }
