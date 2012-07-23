@@ -28,6 +28,7 @@ MainWindow::MainWindow(QWidget *parent): QMainWindow(parent), ui(new Ui::MainWin
    setupXmpp();
    cameras = 0;
    microphones = 0;
+   playerVideoStream = 0;
    updateHardware();
 }
 
@@ -67,8 +68,6 @@ void MainWindow::startCall() {
 
 void MainWindow::stopCall() {
    call->hangup();
-   call->disconnect();
-   call = 0;
    ui->player->reset();
 }
 
@@ -164,6 +163,8 @@ void MainWindow::callConnected() {
 void MainWindow::callFinished() {
    //QXmppCall* call = static_cast<QXmppCall*>(sender());
    if(call->direction() == QXmppCall::OutgoingDirection) call->stopVideo();
+   call = 0;
+   ui->player->reset();
 }
 
 //TODO: Implement
@@ -175,8 +176,13 @@ void MainWindow::callVideoModeChanged(QIODevice::OpenMode mode) {
    if(mode & QIODevice::ReadOnly) {
       qDebug() << "Opening device";
       serverVideoStream = new RtpOutputStream(call);
-      camera = 0;
-      setupCamera(ui->comboCamera->currentIndex());
+      InputStream *cameraStream = 0;
+      int camIndex = ui->comboCamera->currentIndex();
+      camera = new InputGeneric( cameras->getFiles()[camIndex]
+                               , cameras->getFormats()[camIndex]);
+      camera->setState(Input::Playing);
+      cameraStream  = camera->getStreams()[0];
+      cameraStream->subscribe(serverVideoStream);
       QXmppVideoFormat videoFormat;
       videoFormat.setFrameRate(30);
       videoFormat.setFrameSize(QSize(640,480));
@@ -188,6 +194,7 @@ void MainWindow::callVideoModeChanged(QIODevice::OpenMode mode) {
       info.video.height = 480;
       info.video.fps = 30;
       info.video.pixelFormat = PIX_FMT_YUV420P;
+      if(playerVideoStream) ui->player->removeStream(playerVideoStream);
       playerVideoStream = ui->player->addStream(info);
       if(!timer.isActive()) {
          connect(&timer, SIGNAL(timeout()), this, SLOT(readFrames()));
