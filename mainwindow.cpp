@@ -180,7 +180,7 @@ void MainWindow::callVideoModeChanged(QIODevice::OpenMode mode) {
       QXmppVideoFormat videoFormat;
       videoFormat.setFrameRate(30);
       videoFormat.setFrameSize(QSize(640,480));
-      videoFormat.setPixelFormat(QXmppVideoFrame::Format_YUV420P);
+      videoFormat.setPixelFormat(PIX_FMT_YUV420P);
       call->videoChannel()->setEncoderFormat(videoFormat);
       StreamInfo info;
       info.type = Video;
@@ -209,18 +209,13 @@ void MainWindow::callVideoModeChanged(QIODevice::OpenMode mode) {
 }
 
 void MainWindow::readFrames() {
-   QXmppVideoFrame qframe;
-   QList<QXmppVideoFrame> frames = call->videoChannel()->readFrames();
+   AVFrame* frame = 0;
+   QList<AVFrame*> frames = call->videoChannel()->readFrames();
    if(frames.count() == 0) return;
-   foreach(QXmppVideoFrame posFrame, frames) {
-      if(posFrame.isValid()) qframe = posFrame;
+   foreach(AVFrame* posFrame, frames) {
+      if(frame) av_free(frame);
+      frame = posFrame;
    }
-   AVFrame* frame = avcodec_alloc_frame();
-   frame->linesize[0] = qframe.bytesPerLine();
-   frame->data[0] = (uchar*) qframe.bits();
-   frame->width = qframe.width();
-   frame->height = qframe.height();
-   frame->format = PIX_FMT_RGB24;
    playerVideoStream->process(frame);
    av_free(frame);
 }
