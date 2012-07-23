@@ -17,9 +17,10 @@
 using namespace std;
 
 MainWindow::MainWindow(QWidget *parent): QMainWindow(parent), ui(new Ui::MainWindow) {
+   doExit = false;
    ui->setupUi(this);
    ui->contactList->setCurrentRow(0);
-   connect(ui->buttonExit, SIGNAL(clicked()),SLOT(close()));
+   connect(ui->buttonExit, SIGNAL(clicked()),SLOT(shutdown()));
    connect(ui->buttonCall, SIGNAL(clicked()), SLOT(startCall()));
    connect(ui->buttonSendFile, SIGNAL(clicked()), SLOT(sendFile()));
    ui->labelStatus->setText("Connecting");
@@ -31,6 +32,12 @@ MainWindow::MainWindow(QWidget *parent): QMainWindow(parent), ui(new Ui::MainWin
 
 MainWindow::~MainWindow() { delete ui; }
 
+void MainWindow::shutdown() {
+   if(call) call->hangup();
+   doExit = true;
+   client.disconnectFromServer();
+}
+
 void MainWindow::connected() {
    ui->buttonCall->setEnabled(true);
    ui->buttonSendFile->setEnabled(true);
@@ -41,6 +48,7 @@ void MainWindow::disconnected() {
    ui->buttonCall->setEnabled(false);
    ui->buttonSendFile->setEnabled(false);
    ui->labelStatus->setText("Connecting");
+   if(doExit) close();
 }
 
 void MainWindow::startCall() {
@@ -141,12 +149,12 @@ void MainWindow::callReceived(QXmppCall* call) {
 }
 
 void MainWindow::callConnected() {
-   QXmppCall* call = static_cast<QXmppCall*>(sender());
+   //QXmppCall* call = static_cast<QXmppCall*>(sender());
    if(call->direction() == QXmppCall::OutgoingDirection) call->startVideo();
 }
 
 void MainWindow::callFinished() {
-   QXmppCall* call = static_cast<QXmppCall*>(sender());
+   //QXmppCall* call = static_cast<QXmppCall*>(sender());
    if(call->direction() == QXmppCall::OutgoingDirection) call->stopVideo();
 }
 
@@ -154,8 +162,10 @@ void MainWindow::callFinished() {
 void MainWindow::callAudioModeChanged(QIODevice::OpenMode) { }
 
 void MainWindow::callVideoModeChanged(QIODevice::OpenMode mode) {
-   QXmppCall* call = static_cast<QXmppCall*>(sender());
+   qDebug() << "Call video mode changed";
+   //QXmppCall* call = static_cast<QXmppCall*>(sender());
    if(mode & QIODevice::ReadOnly) {
+      qDebug() << "Opening device";
       serverVideoStream = new RtpOutputStream(call);
       camera = 0;
       setupCamera(ui->comboCamera->currentIndex());
@@ -175,11 +185,14 @@ void MainWindow::callVideoModeChanged(QIODevice::OpenMode mode) {
          connect(&timer, SIGNAL(timeout()), this, SLOT(readFrames()));
          timer.start();
       }
-   } else if(mode & QIODevice::NotOpen) {
+   } else if(mode == QIODevice::NotOpen) {
+      qDebug() << "Closing device";
       //TODO: Close webcam
       delete camera;
       disconnect(&timer, SIGNAL(timeout()), this, SLOT(readFrames()));
       timer.stop();
+   } else {
+      qDebug() << "Got some oher opennmode" << (int)mode;
    }
 }
 

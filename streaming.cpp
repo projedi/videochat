@@ -11,11 +11,6 @@ RtpOutputStream::~RtpOutputStream() { }
 StreamInfo RtpOutputStream::info() { }
 
 void RtpOutputStream::process(AVFrame* frame) {
-   //qDebug("AV_NUM_DATA_POINTERS=%d",AV_NUM_DATA_POINTERS);
-   //qDebug( "Rtp Output stream received frame with linesizes: %d, %d, %d, %d, %d, %d, %d, %d"
-   //      , frame->linesize[0], frame->linesize[1], frame->linesize[2], frame->linesize[3]
-   //      , frame->linesize[4], frame->linesize[5], frame->linesize[6], frame->linesize[7]);
-   //qDebug("It's format is %d, size %dx%d",frame->format,frame->width,frame->height);
    AVFrame* newFrame = avcodec_alloc_frame();
    scaler = sws_getCachedContext( scaler, frame->width, frame->height
                                 , (PixelFormat)frame->format
@@ -25,9 +20,6 @@ void RtpOutputStream::process(AVFrame* frame) {
    sws_scale( scaler, frame->data, frame->linesize, 0, frame->height
             , newFrame->data, newFrame->linesize);
    
-   //qDebug( "Scaling produced frame with datas: %d, %d, %d, %d"
-   //      , newFrame->data[0], newFrame->data[1], newFrame->data[2], newFrame->data[3]);
-   //qDebug("It's format is %d, size %dx%d",(int)PIX_FMT_YUV420P,frame->width,frame->height);
    int size = newFrame->linesize[0]*frame->height;
    QXmppVideoFrame qframe( size, QSize(frame->width,frame->height), newFrame->linesize[0]
                          , QXmppVideoFrame::Format_RGB24);

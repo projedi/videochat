@@ -32,6 +32,7 @@ public:
    explicit MainWindow(QWidget *parent = 0);
    ~MainWindow();
 private slots:
+   void shutdown();
    void connected();
    void disconnected();
    void startCall();
@@ -62,5 +63,6 @@ private:
    VideoHardware* cameras;
    AudioHardware* microphones;
    QTimer timer;
+   bool doExit;
    QXmppCall* call;
 };
