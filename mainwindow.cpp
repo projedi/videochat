@@ -24,6 +24,10 @@ MainWindow::MainWindow(QWidget *parent): QMainWindow(parent), ui(new Ui::MainWin
    connect(ui->buttonCall, SIGNAL(clicked()), SLOT(startCall()));
    connect(ui->buttonHangup, SIGNAL(clicked()), SLOT(stopCall()));
    connect(ui->buttonSendFile, SIGNAL(clicked()), SLOT(sendFile()));
+   connect(ui->comboBoxCodecs, SIGNAL(currentIndexChanged(const QString&))
+          , SLOT(codecChanged(const QString&)));
+   connect(ui->lineEditChat, SIGNAL(returnPressed()), SLOT(sendMessage()));
+   codecChanged(ui->comboBoxCodecs->currentText());
    ui->labelStatus->setText("Connecting");
    setupXmpp();
    cameras = 0;
@@ -34,10 +38,26 @@ MainWindow::MainWindow(QWidget *parent): QMainWindow(parent), ui(new Ui::MainWin
 
 MainWindow::~MainWindow() { delete ui; }
 
+void MainWindow::codecChanged(const QString &codecName) {
+   qDebug("Codec changed");
+   QList<CodecID> codecs;
+   if(codecName == "MJPEG")
+      codecs << CODEC_ID_MJPEG;
+   else if(codecName == "H.264")
+      codecs << CODEC_ID_H264;
+   else
+      qWarning("Unknown codec requested: %s", codecName.toAscii().data());
+   callManager.setCodecs(codecs);
+}
+
 void MainWindow::shutdown() {
    if(call) call->hangup();
-   doExit = true;
-   client.disconnectFromServer();
+   if(client.state() == QXmppClient::ConnectedState) {
+      doExit = true;
+      client.disconnectFromServer();
+   } else {
+      close();
+   }
 }
 
 void MainWindow::connected() {
@@ -82,6 +102,21 @@ void MainWindow::sendFile() {
           , this, SLOT(fileTransferError(QXmppTransferJob::Error)));
    connect( job, SIGNAL(progress(qint64,qint64))
           , this, SLOT(fileTransferProgress(qint64,qint64)));
+}
+
+void MainWindow::sendMessage() {
+   if(ui->contactList->selectedItems().count() < 1) return;
+   QString text = ui->lineEditChat->text();
+   ui->lineEditChat->clear();
+   QString contactName = ui->contactList->selectedItems()[0]->text();
+   ui->textEditChat->setAlignment(Qt::AlignLeft);
+   ui->textEditChat->append(text);
+   client.sendMessage(contactName, text);
+}
+
+void MainWindow::messageReceived(const QXmppMessage& message) {
+   ui->textEditChat->setAlignment(Qt::AlignRight);
+   ui->textEditChat->append(message.body());
 }
 
 void MainWindow::fileTransferRequest(QXmppTransferJob* job) {
@@ -242,6 +277,8 @@ void MainWindow::setupXmpp() {
           , this, SLOT(callReceived(QXmppCall*)));
    connect( &client, SIGNAL(connected()), this, SLOT(connected()));
    connect( &client, SIGNAL(disconnected()), this, SLOT(disconnected()));
+   connect( &client, SIGNAL(messageReceived(const QXmppMessage&))
+          , SLOT(messageReceived(const QXmppMessage&)));
    QXmppConfiguration config;
    config.setUser(USERNAME);
    //Uses actual IP address

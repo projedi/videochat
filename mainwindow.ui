@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>889</width>
-    <height>500</height>
+    <height>530</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -25,7 +25,7 @@
 	color: #333;
 }
 
-QComboBox, QPushButton, QListWidget {
+QComboBox, QPushButton, QListWidget, QTextEdit, QLineEdit {
 	border: 1px solid gray;
 	border-radius: 5px;
 }
@@ -34,6 +34,16 @@ QListWidget {
 background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
                                   stop: 0 #F6F6F6, stop: 1.0 #EFEFEF);
 }
+
+QTextEdit {
+background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                  stop: 0 #E0E0E0, stop: 1.0 #E6E6E6);
+}
+
+QLineEdit {
+background: #FEFEFE;
+}
+
 
 QComboBox {
     padding: 1px 3px 1px 3px;
@@ -106,10 +116,13 @@ background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
     <property name="geometry">
      <rect>
       <x>660</x>
-      <y>440</y>
+      <y>470</y>
       <width>121</width>
       <height>21</height>
      </rect>
+    </property>
+    <property name="visible">
+     <bool>true</bool>
     </property>
     <property name="styleSheet">
      <string notr="true">QPushButton {
@@ -141,9 +154,6 @@ radius: 1.35, stop: 0 #0f0, stop: 1 #0c0);
     <property name="text">
      <string>Call</string>
     </property>
-    <property name="visible">
-     <bool>true</bool>
-    </property>
    </widget>
    <widget class="QPushButton" name="buttonHangup">
     <property name="geometry">
@@ -153,6 +163,9 @@ radius: 1.35, stop: 0 #0f0, stop: 1 #0c0);
       <width>121</width>
       <height>21</height>
      </rect>
+    </property>
+    <property name="visible">
+     <bool>false</bool>
     </property>
     <property name="styleSheet">
      <string notr="true">QPushButton {
@@ -178,9 +191,6 @@ radius: 1.35, stop: 0 #f00, stop: 1 #c00);
     <property name="text">
      <string>Hangup</string>
     </property>
-    <property name="visible">
-     <bool>false</bool>
-    </property>
    </widget>
    <widget class="QListWidget" name="contactList">
     <property name="geometry">
@@ -188,7 +198,7 @@ radius: 1.35, stop: 0 #f00, stop: 1 #c00);
       <x>660</x>
       <y>70</y>
       <width>221</width>
-      <height>361</height>
+      <height>151</height>
      </rect>
     </property>
     <item>
@@ -206,7 +216,7 @@ radius: 1.35, stop: 0 #f00, stop: 1 #c00);
     <property name="geometry">
      <rect>
       <x>810</x>
-      <y>470</y>
+      <y>500</y>
       <width>71</width>
       <height>21</height>
      </rect>
@@ -222,7 +232,7 @@ radius: 1.35, stop: 0 #f00, stop: 1 #c00);
     <property name="geometry">
      <rect>
       <x>790</x>
-      <y>440</y>
+      <y>470</y>
       <width>91</width>
       <height>21</height>
      </rect>
@@ -270,24 +280,80 @@ radius: 1.35, stop: 0 #f00, stop: 1 #c00);
       <height>23</height>
      </rect>
     </property>
-    <property name="value">
-     <number>24</number>
-    </property>
     <property name="visible">
      <bool>false</bool>
+    </property>
+    <property name="value">
+     <number>24</number>
     </property>
    </widget>
    <widget class="QLabel" name="labelStatus">
     <property name="geometry">
      <rect>
       <x>660</x>
-      <y>470</y>
+      <y>500</y>
       <width>141</width>
       <height>23</height>
      </rect>
     </property>
     <property name="visible">
      <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QComboBox" name="comboBoxCodecs">
+    <property name="geometry">
+     <rect>
+      <x>60</x>
+      <y>500</y>
+      <width>81</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <item>
+     <property name="text">
+      <string>H.264</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>MJPEG</string>
+     </property>
+    </item>
+   </widget>
+   <widget class="QTextEdit" name="textEditChat">
+    <property name="geometry">
+     <rect>
+      <x>660</x>
+      <y>230</y>
+      <width>221</width>
+      <height>201</height>
+     </rect>
+    </property>
+    <property name="textInteractionFlags">
+     <set>Qt::TextSelectableByKeyboard|Qt::TextSelectableByMouse</set>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="lineEditChat">
+    <property name="geometry">
+     <rect>
+      <x>660</x>
+      <y>440</y>
+      <width>221</width>
+      <height>21</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>500</y>
+      <width>41</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Codec</string>
     </property>
    </widget>
   </widget>

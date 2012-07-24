@@ -32,12 +32,15 @@ public:
    explicit MainWindow(QWidget *parent = 0);
    ~MainWindow();
 private slots:
+   void codecChanged(const QString&);
    void shutdown();
    void connected();
    void disconnected();
    void startCall();
    void stopCall();
    void sendFile();
+   void sendMessage();
+   void messageReceived(const QXmppMessage&);
    void fileTransferRequest(QXmppTransferJob*);
    void fileTransferStarted(QXmppTransferJob*);
    void fileTransferFinished(QXmppTransferJob*);
