@@ -109,14 +109,15 @@ void MainWindow::sendMessage() {
    QString text = ui->lineEditChat->text();
    ui->lineEditChat->clear();
    QString contactName = ui->contactList->selectedItems()[0]->text();
-   ui->textEditChat->setAlignment(Qt::AlignLeft);
    ui->textEditChat->append(text);
+   ui->textEditChat->setAlignment(Qt::AlignLeft);
    client.sendMessage(contactName, text);
 }
 
 void MainWindow::messageReceived(const QXmppMessage& message) {
-   ui->textEditChat->setAlignment(Qt::AlignRight);
+   qDebug("Message received");
    ui->textEditChat->append(message.body());
+   ui->textEditChat->setAlignment(Qt::AlignRight);
 }
 
 void MainWindow::fileTransferRequest(QXmppTransferJob* job) {
