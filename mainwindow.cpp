@@ -288,6 +288,7 @@ void MainWindow::setupXmpp() {
    client.addExtension(&transferManager);
    client.addExtension(&callManager);
    client.connectToServer(config);
+   call = 0;
 }
 
 void MainWindow::updateHardware() {
