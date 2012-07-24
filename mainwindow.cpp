@@ -36,6 +36,7 @@ MainWindow::MainWindow(QWidget *parent): QMainWindow(parent), ui(new Ui::MainWin
    cameras = 0;
    microphones = 0;
    playerVideoStream = 0;
+   remoteCamera = 0;
    updateHardware();
 }
 
