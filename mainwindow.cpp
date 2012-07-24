@@ -84,11 +84,13 @@ void MainWindow::startCall() {
           , SLOT(callAudioModeChanged(QIODevice::OpenMode)));
    connect( call, SIGNAL(videoModeChanged(QIODevice::OpenMode)), this
           , SLOT(callVideoModeChanged(QIODevice::OpenMode)));
+   ui->comboBoxCodecs->setEnabled(false);
 }
 
 void MainWindow::stopCall() {
    call->hangup();
    ui->player->reset();
+   ui->comboBoxCodecs->setEnabled(true);
 }
 
 void MainWindow::sendFile() {
@@ -193,6 +195,7 @@ void MainWindow::callReceived(QXmppCall* call) {
 
 void MainWindow::callConnected() {
    //QXmppCall* call = static_cast<QXmppCall*>(sender());
+   ui->comboBoxCodecs->setEnabled(false);
    if(call->direction() == QXmppCall::OutgoingDirection) call->startVideo();
 }
 
@@ -201,6 +204,7 @@ void MainWindow::callFinished() {
    if(call->direction() == QXmppCall::OutgoingDirection) call->stopVideo();
    call = 0;
    ui->player->reset();
+   ui->comboBoxCodecs->setEnabled(true);
 }
 
 //TODO: Implement
