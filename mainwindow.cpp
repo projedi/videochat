@@ -171,7 +171,6 @@ void MainWindow::callFinished() {
 void MainWindow::callAudioModeChanged(QIODevice::OpenMode) { }
 
 void MainWindow::callVideoModeChanged(QIODevice::OpenMode mode) {
-   qDebug() << "Call video mode changed";
    //QXmppCall* call = static_cast<QXmppCall*>(sender());
    if(mode & QIODevice::ReadOnly) {
       qDebug() << "Opening device";
@@ -204,7 +203,6 @@ void MainWindow::callVideoModeChanged(QIODevice::OpenMode mode) {
       ui->buttonHangup->show();
    } else if(mode == QIODevice::NotOpen) {
       qDebug() << "Closing device";
-      //TODO: Close webcam
       delete camera;
       disconnect(&timer, SIGNAL(timeout()), this, SLOT(readFrames()));
       timer.stop();

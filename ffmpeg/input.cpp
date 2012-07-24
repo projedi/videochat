@@ -23,7 +23,11 @@ InputStream::InputStream(AVStream* avstream) {
    } else state = Opened;
 }
 
-InputStream::~InputStream() { if(codecCtx) avcodec_close(codecCtx); }
+InputStream::~InputStream() {
+   qDebug("~InputStream: started");
+   if(codecCtx) avcodec_close(codecCtx);
+   qDebug("~InputStream: finished");
+}
 
 StreamInfo InputStream::info() {
    StreamInfo info;
@@ -83,9 +87,13 @@ void InputStream::process(AVPacket* pkt) {
 }
 
 Input::~Input() {
+   qDebug("~Input: started");
    setState(Paused);
+   qDebug("~Input: setState(Paused)");
    workerFuture.waitForFinished();
+   qDebug("~Input: workerFuture.waitForFinished()");
    for(int i = 0; i < streams.count(); i++) { if(streams[i]) delete streams[i]; }
+   qDebug("~Input: finished");
 }
 
 QList<InputStream*> Input::getStreams() { return streams; }
@@ -123,31 +131,52 @@ InputGeneric::InputGeneric(QString filename, QString formatname) {
 }
 
 InputGeneric::~InputGeneric() {
+   qDebug("~InputGeneric: started");
    setState(Paused);
+   qDebug("~InputGeneric: setState(Paused)");
    closingLocker.lock();
-   if(formatCtx->iformat && (formatCtx->iformat->read_close))
+   qDebug("~InputGeneric: closingLocker.lock()");
+   if(formatCtx->iformat && (formatCtx->iformat->read_close)) {
       formatCtx->iformat->read_close(formatCtx);
+      qDebug("~InputGeneric: read_close(format)");
+   }
    avio_close(formatCtx->pb);
+   qDebug("~InputGeneric: avio_close(format->pb)");
    closingLocker.unlock();
+   qDebug("~InputGeneric: closingLocker.unlock()");
    //It might seem like duplication from parent destructor but it's required because
    //avformat_free_context frees codecs itself(but doesnt't close them).
    workerFuture.waitForFinished();
+   qDebug("~InputGeneric: workerFuture.waitForFinished()");
    //TODO: Watch the memory when I remove only this loop.
    for(int i = 0; i < streams.count(); i++) { if(streams[i]) delete streams[i]; }
+   qDebug("~InputGeneric: deleted streams");
    streams.clear();
+   qDebug("~InputGeneric: streams.clear()");
    avformat_free_context(formatCtx);
+   qDebug("~InputGeneric: finished");
 }
 
 void InputGeneric::worker() {
    //TODO: If lots of errors, then what?
    while(state != Paused) {
-      AVPacket* pkt = new AVPacket();
-      av_init_packet(pkt);
+      qDebug("worker: started");
       closingLocker.lock();
+      qDebug("worker: closingLocker.lock()");
+      if(state == Paused) { closingLocker.unlock(); break; }
+      qDebug("worker: if(state == Paused) { closingLocker.unlock(); break; }");
+      AVPacket* pkt = new AVPacket();
+      qDebug("worker: new AVPacket()");
+      av_init_packet(pkt);
+      qDebug("worker: av_init_packet");
       //TODO: determine when negative number is an EOF
-      if(av_read_frame(formatCtx,pkt) < 0) { logger("Can't read frame"); continue; }
-      closingLocker.unlock();
+      if(av_read_frame(formatCtx,pkt) < 0) { qDebug("Can't read frame"); continue; }
+      qDebug("worker: av_read_frame");
       streams[pkt->stream_index]->process(pkt);
+      qDebug("worker: stream->process(pkt)");
       av_free_packet(pkt);
+      qDebug("worker: av_free_packet");
+      closingLocker.unlock();
+      qDebug("worker: closingLocker.unlock()");
    }
 }
