@@ -5,6 +5,7 @@
 #include <QMessageBox>
 #include <QFileDialog>
 #include "streaming.h"
+#include <stabilization.h>
 
 #if defined(LINUX)
 #define LOCALHOST "192.168.0.102"
@@ -27,6 +28,8 @@ MainWindow::MainWindow(QWidget *parent): QMainWindow(parent), ui(new Ui::MainWin
    connect(ui->comboBoxCodecs, SIGNAL(currentIndexChanged(const QString&))
           , SLOT(codecChanged(const QString&)));
    connect(ui->lineEditChat, SIGNAL(returnPressed()), SLOT(sendMessage()));
+   connect( ui->checkBoxStabilize, SIGNAL(stateChanged(int))
+          , ui->player, SLOT(setStabilizing(int)));
    codecChanged(ui->comboBoxCodecs->currentText());
    ui->labelStatus->setText("Connecting");
    setupXmpp();
@@ -52,6 +55,7 @@ void MainWindow::codecChanged(const QString &codecName) {
 
 void MainWindow::shutdown() {
    if(call) call->hangup();
+   if(remoteCamera) stopCall();
    if(client.state() == QXmppClient::ConnectedState) {
       doExit = true;
       client.disconnectFromServer();
@@ -76,19 +80,42 @@ void MainWindow::disconnected() {
 void MainWindow::startCall() {
    if(ui->contactList->selectedItems().count() < 1) return;
    QString contactName = ui->contactList->selectedItems()[0]->text();
-
-   call = callManager.call(contactName);
-   connect( call, SIGNAL(connected()),this,SLOT(callConnected()));
-   connect( call, SIGNAL(finished()), this,SLOT(callFinished()));
-   connect( call, SIGNAL(audioModeChanged(QIODevice::OpenMode)), this
-          , SLOT(callAudioModeChanged(QIODevice::OpenMode)));
-   connect( call, SIGNAL(videoModeChanged(QIODevice::OpenMode)), this
-          , SLOT(callVideoModeChanged(QIODevice::OpenMode)));
+   if(contactName.startsWith("camera")) {
+      contactName.replace("camera@","");
+      remoteCamera = new InputGeneric("http://"+contactName+"/mjpg/video.mjpg","mjpeg");
+      remoteCamera->setState(Input::Playing);
+      StreamInfo info;
+      info.type = Video;
+      info.video.width = 640;
+      info.video.height = 480;
+      info.video.fps = 30;
+      info.video.pixelFormat = PIX_FMT_YUV420P;
+      if(playerVideoStream) ui->player->removeStream(playerVideoStream);
+      playerVideoStream = ui->player->addStream(info);
+      remoteCamera->getStreams()[0]->subscribe(playerVideoStream);
+      ui->buttonCall->hide();
+      ui->buttonHangup->show();
+   } else { 
+      call = callManager.call(contactName);
+      connect( call, SIGNAL(connected()),this,SLOT(callConnected()));
+      connect( call, SIGNAL(finished()), this,SLOT(callFinished()));
+      connect( call, SIGNAL(audioModeChanged(QIODevice::OpenMode)), this
+             , SLOT(callAudioModeChanged(QIODevice::OpenMode)));
+      connect( call, SIGNAL(videoModeChanged(QIODevice::OpenMode)), this
+             , SLOT(callVideoModeChanged(QIODevice::OpenMode)));
+   }
    ui->comboBoxCodecs->setEnabled(false);
 }
 
 void MainWindow::stopCall() {
-   call->hangup();
+   if(remoteCamera) {
+      delete remoteCamera;
+      remoteCamera = 0;
+      ui->buttonHangup->hide();
+      ui->buttonCall->show();
+   } else {
+      call->hangup();
+   }
    ui->player->reset();
    ui->comboBoxCodecs->setEnabled(true);
 }

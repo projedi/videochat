@@ -113,6 +113,7 @@ int callback(void* arg) {
 }
 
 InputGeneric::InputGeneric(QString filename, QString formatname) {
+   qDebug("Opening %s: %s", formatname.toAscii().data(), filename.toAscii().data());
    //initFuture = QtConcurrent::run(this, &InputGeneric::init, filename, formatname);
    state = Opening;
    formatCtx = avformat_alloc_context();
@@ -160,23 +161,23 @@ InputGeneric::~InputGeneric() {
 void InputGeneric::worker() {
    //TODO: If lots of errors, then what?
    while(state != Paused) {
-      qDebug("worker: started");
+      //qDebug("worker: started");
       closingLocker.lock();
-      qDebug("worker: closingLocker.lock()");
+      //qDebug("worker: closingLocker.lock()");
       if(state == Paused) { closingLocker.unlock(); break; }
-      qDebug("worker: if(state == Paused) { closingLocker.unlock(); break; }");
+      //qDebug("worker: if(state == Paused) { closingLocker.unlock(); break; }");
       AVPacket* pkt = new AVPacket();
-      qDebug("worker: new AVPacket()");
+      //qDebug("worker: new AVPacket()");
       av_init_packet(pkt);
-      qDebug("worker: av_init_packet");
+      //qDebug("worker: av_init_packet");
       //TODO: determine when negative number is an EOF
       if(av_read_frame(formatCtx,pkt) < 0) { qDebug("Can't read frame"); continue; }
-      qDebug("worker: av_read_frame");
+      //qDebug("worker: av_read_frame");
       streams[pkt->stream_index]->process(pkt);
-      qDebug("worker: stream->process(pkt)");
+      //qDebug("worker: stream->process(pkt)");
       av_free_packet(pkt);
-      qDebug("worker: av_free_packet");
+      //qDebug("worker: av_free_packet");
       closingLocker.unlock();
-      qDebug("worker: closingLocker.unlock()");
+      //qDebug("worker: closingLocker.unlock()");
    }
 }

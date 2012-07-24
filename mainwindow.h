@@ -62,7 +62,7 @@ private:
    QXmppServer server;
    QXmppTransferManager transferManager;
    QXmppCallManager callManager;
-   Input *camera, *microphone;
+   Input *camera, *microphone, *remoteCamera;
    OutputStream *serverVideoStream, *playerVideoStream;
    VideoHardware* cameras;
    AudioHardware* microphones;

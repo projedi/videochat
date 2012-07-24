@@ -8,7 +8,7 @@ win32 {
    DEFINES += WIN32
 }
 unix {
-   LIBS += -lavcodec -lavformat -lavdevice -lswscale -lavutil -lswresample -lqxmpp_d
+   LIBS += -lavcodec -lavformat -lavdevice -lswscale -lavutil -lswresample -lqxmpp_d -lstabilization
    DEFINES += LINUX
 }
 

@@ -208,7 +208,7 @@ radius: 1.35, stop: 0 #f00, stop: 1 #c00);
     </item>
     <item>
      <property name="text">
-      <string>username@192.168.0.102/QXmpp</string>
+      <string>camera@192.168.0.90</string>
      </property>
     </item>
    </widget>
@@ -354,6 +354,19 @@ radius: 1.35, stop: 0 #f00, stop: 1 #c00);
     </property>
     <property name="text">
      <string>Codec</string>
+    </property>
+   </widget>
+   <widget class="QCheckBox" name="checkBoxStabilize">
+    <property name="geometry">
+     <rect>
+      <x>150</x>
+      <y>500</y>
+      <width>81</width>
+      <height>19</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Stabilize</string>
     </property>
    </widget>
   </widget>
