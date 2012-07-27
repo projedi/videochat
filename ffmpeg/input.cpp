@@ -132,6 +132,7 @@ InputGeneric::InputGeneric(QString filename, QString formatname) {
 }
 
 InputGeneric::~InputGeneric() {
+   if(!formatCtx) return;
    qDebug("~InputGeneric: started");
    setState(Paused);
    qDebug("~InputGeneric: setState(Paused)");

@@ -105,7 +105,7 @@ void MainWindow::startCall() {
       connect( call, SIGNAL(videoModeChanged(QIODevice::OpenMode)), this
              , SLOT(callVideoModeChanged(QIODevice::OpenMode)));
    }
-   ui->comboBoxCodecs->setEnabled(false);
+   //ui->comboBoxCodecs->setEnabled(false);
 }
 
 void MainWindow::stopCall() {
@@ -225,6 +225,9 @@ void MainWindow::callReceived(QXmppCall* call) {
 void MainWindow::callConnected() {
    //QXmppCall* call = static_cast<QXmppCall*>(sender());
    ui->comboBoxCodecs->setEnabled(false);
+   ui->buttonCall->hide();
+   ui->buttonHangup->show();
+   ui->buttonCall->setEnabled(false);
    if(call->direction() == QXmppCall::OutgoingDirection) call->startVideo();
 }
 
@@ -234,6 +237,9 @@ void MainWindow::callFinished() {
    call = 0;
    ui->player->reset();
    ui->comboBoxCodecs->setEnabled(true);
+   ui->buttonCall->setEnabled(true);
+   ui->buttonHangup->hide();
+   ui->buttonCall->show();
 }
 
 //TODO: Implement
@@ -248,12 +254,13 @@ void MainWindow::callVideoModeChanged(QIODevice::OpenMode mode) {
       int camIndex = ui->comboCamera->currentIndex();
       camera = new InputGeneric( cameras->getFiles()[camIndex]
                                , cameras->getFormats()[camIndex]);
-      camera->setState(Input::Playing);
       if(camera->getStreams().count() < 1) {
          qWarning("Camera has no streams");
          //TODO: Or maybe just stop sending video?
          call->hangup();
+         return;
       }
+      camera->setState(Input::Playing);
       cameraStream  = camera->getStreams()[0];
       cameraStream->subscribe(serverVideoStream);
       QXmppVideoFormat videoFormat;
@@ -273,15 +280,11 @@ void MainWindow::callVideoModeChanged(QIODevice::OpenMode mode) {
          connect(&timer, SIGNAL(timeout()), this, SLOT(readFrames()));
          timer.start();
       }
-      ui->buttonCall->hide();
-      ui->buttonHangup->show();
    } else if(mode == QIODevice::NotOpen) {
       qDebug() << "Closing device";
       delete camera;
       disconnect(&timer, SIGNAL(timeout()), this, SLOT(readFrames()));
       timer.stop();
-      ui->buttonHangup->hide();
-      ui->buttonCall->show();
    } else {
       qDebug() << "Got some oher opennmode" << (int)mode;
    }
@@ -300,7 +303,7 @@ void MainWindow::readFrames() {
 }
 
 void MainWindow::setupXmpp() {
-   //QXmppLogger::getLogger()->setLoggingType(QXmppLogger::StdoutLogging);
+   QXmppLogger::getLogger()->setLoggingType(QXmppLogger::StdoutLogging);
    server.setDomain(LOCALHOST);
    server.setPasswordChecker(new MyPasswordChecker());
    server.listenForClients(QHostAddress(LOCALHOST));
