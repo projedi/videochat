@@ -141,6 +141,7 @@ void MainWindow::sendMessage() {
    QString contactName = ui->contactList->selectedItems()[0]->text();
    ui->textEditChat->append(text);
    ui->textEditChat->setAlignment(Qt::AlignLeft);
+   //TODO: Don't send message to self
    client.sendMessage(contactName, text);
 }
 
@@ -248,6 +249,11 @@ void MainWindow::callVideoModeChanged(QIODevice::OpenMode mode) {
       camera = new InputGeneric( cameras->getFiles()[camIndex]
                                , cameras->getFormats()[camIndex]);
       camera->setState(Input::Playing);
+      if(camera->getStreams().count() < 1) {
+         qWarning("Camera has no streams");
+         //TODO: Or maybe just stop sending video?
+         call->hangup();
+      }
       cameraStream  = camera->getStreams()[0];
       cameraStream->subscribe(serverVideoStream);
       QXmppVideoFormat videoFormat;
@@ -331,23 +337,4 @@ void MainWindow::updateHardware() {
    microphones = new AudioHardware();
    ui->comboCamera->addItems(cameras->getNames());
    ui->comboMicrophone->addItems(microphones->getNames());
-}
-
-void MainWindow::setupCamera(int camIndex) {
-   if(camera) delete camera;
-   InputStream *cameraStream = 0;
-   try {
-      camera = new InputGeneric( cameras->getFiles()[camIndex]
-                               , cameras->getFormats()[camIndex]);
-      camera->setState(Input::Playing);
-      if(camera->getStreams().count() < 1) logger("Camera doesn't have streams");
-      else cameraStream  = camera->getStreams()[0];
-   } catch(...) { logger("Can't open camera"); camera = 0; }
-   if(cameraStream && serverVideoStream) {
-      cameraStream->subscribe(serverVideoStream);
-   }
-}
-
-void MainWindow::setupMicrophone(int micIndex) {
-   if(microphone) delete microphone;
 }
