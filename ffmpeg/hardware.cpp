@@ -23,6 +23,7 @@ VideoHardware::VideoHardware() {
    formats.append("v4l2");
    files.append("/dev/video1");
 #elif defined(WIN32)
+   /* Fucking Microsoft
    HRESULT hr;
    ICreateDevEnum *pSysDevEnum = NULL;
    hr = CoCreateInstance( CLSID_SystemDeviceEnum, NULL, CLSCTX_INPROC_SERVER
@@ -56,6 +57,7 @@ VideoHardware::VideoHardware() {
       qWarning("Can't enumerate video devices");
    }
    pSysDevEnum->Release();
+   */
 
    names.append("Default webcam");
    formats.append("dshow");
