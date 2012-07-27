@@ -3,16 +3,34 @@
 #include "mainwindow.h"
 #include "ffmpeg.h"
 #include <iostream>
+#include <fstream>
 using namespace std;
 
-void mesOutput(QtMsgType type, const char *msg) {
-   cerr << msg << endl;
-   logger(msg);
+namespace logging {
+   static fstream logger;
+   static clock_t startTime;
+
+   void initLogging() {
+#if defined(LINUX)
+      const char *filename = "/tmp/videochat.log";
+#elif defined(WIN32)
+      const char *filename = "videochat.log";
+#endif
+      logging::logger.open(filename,fstream::out);
+      logging::startTime = clock();
+   }
+}
+
+void mesOutput(QtMsgType, const char *msg) {
+   clock_t curTime = clock();
+   double timestamp = ((double)(curTime - logging::startTime)) / CLOCKS_PER_SEC;
+   cerr << timestamp << ": " << msg << endl;
+   logging::logger << timestamp << ": " << msg << endl;
 }
 
 int main(int argc, char *argv[])
 {
-   initLogging();
+   logging::initLogging();
    qInstallMsgHandler(mesOutput);
    QApplication a(argc, argv);
 

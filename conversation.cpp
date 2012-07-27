@@ -1,9 +1,17 @@
 #include "conversation.h"
 
-Conversation::Conversation(QString jid) {
+Conversation::Conversation(QString jid, Ui::Mainwindow *ui) {
    this->jid = jid;
    call = 0;
    remoteCamera = 0;
+   buttonCall = ui->buttonCall;
+   buttonHangup = ui->buttonHangup;
+   buttonSendFile = ui->buttonSendFile;
+   progressBarStatus = ui->progressBarStatus;
+   labelStatus = ui->labelStatus;
+   comboBoxCodecs = ui->comboBoxCodecs;
+   lineEditChat = ui->lineEditChat;
+   textEditChat = ui->textEditChat;
 }
 
 Conversation::~Conversation() { }

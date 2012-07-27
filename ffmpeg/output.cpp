@@ -120,14 +120,14 @@ OutputGeneric::OutputGeneric(QString fmt, QString file) {
 
 OutputGeneric::~OutputGeneric() {
    av_write_trailer(format);
-   logger("Closing file");
+   qDebug("Closing file");
    avio_close(format->pb);
    // It seems like duplication from supertype destructor. But avformat_free_context
    // bluntly frees(without closing) codecs and i have to close each codec before doing
    // that.
    for(int i = 0; i < streams.count(); i++) { if(streams[i]) delete streams[i]; }
    streams.clear();
-   logger("freeing context");
+   qDebug("freeing context");
    avformat_free_context(format);
 }
 
