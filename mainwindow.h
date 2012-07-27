@@ -10,7 +10,7 @@
 #include <qxmpp/QXmppTransferManager.h>
 #include <qxmpp/QXmppCallManager.h>
 #include <qxmpp/QXmppRtpChannel.h>
-#include "ffmpeg.h"
+#include "conversation.h"
 
 namespace Ui { class MainWindow; }
 
@@ -32,41 +32,34 @@ public:
    explicit MainWindow(QWidget *parent = 0);
    ~MainWindow();
 private slots:
-   void codecChanged(const QString&);
    void shutdown();
-   void connected();
-   void disconnected();
    void startCall();
    void stopCall();
    void sendFile();
    void sendMessage();
+   void codecChanged(const QString&);
+   void contactChanged(QListWidgetItem*, QListWidgetItem*);
+   void setStabilizing(int);
+
+   void connected();
+   void disconnected();
    void messageReceived(const QXmppMessage&);
    void fileTransferRequest(QXmppTransferJob*);
-   void fileTransferStarted(QXmppTransferJob*);
-   void fileTransferFinished(QXmppTransferJob*);
-   void fileTransferProgress(qint64,qint64);
-   void fileTransferError(QXmppTransferJob::Error);
-   void callReceived(QXmppCall*);
-   void callConnected();
-   void callFinished();
-   void callAudioModeChanged(QIODevice::OpenMode);
-   void callVideoModeChanged(QIODevice::OpenMode);
-   void readFrames();
+   void callRequest(QXmppCall*);
 private:
-   void setupXmpp();
+   void loadContactList();
    void updateHardware();
-   void setupCamera(int camIndex);
-   void setupMicrophone(int micIndex);
+   void setupXmpp();
+   Conversation* jidToConversation(QString jid);
+
    Ui::MainWindow *ui;
    QXmppClient client;
    QXmppServer server;
    QXmppTransferManager transferManager;
    QXmppCallManager callManager;
-   Input *camera, *microphone, *remoteCamera;
+   Input *camera, *microphone;
    OutputStream *serverVideoStream, *playerVideoStream;
    VideoHardware* cameras;
    AudioHardware* microphones;
-   QTimer timer;
-   bool doExit;
-   QXmppCall* call;
+   QList<Conversation*> chats;
 };

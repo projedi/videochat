@@ -18,32 +18,120 @@
 using namespace std;
 
 MainWindow::MainWindow(QWidget *parent): QMainWindow(parent), ui(new Ui::MainWindow) {
-   doExit = false;
+   cameras = 0;
+   microphones = 0;
+   playerVideoStream = 0;
+   serverVideoStream = 0;
+   camera = 0;
+   microphone = 0;
    ui->setupUi(this);
-   ui->contactList->setCurrentRow(0);
+
    connect(ui->buttonExit, SIGNAL(clicked()),SLOT(shutdown()));
    connect(ui->buttonCall, SIGNAL(clicked()), SLOT(startCall()));
    connect(ui->buttonHangup, SIGNAL(clicked()), SLOT(stopCall()));
    connect(ui->buttonSendFile, SIGNAL(clicked()), SLOT(sendFile()));
-   connect(ui->comboBoxCodecs, SIGNAL(currentIndexChanged(const QString&))
+   connect( ui->comboBoxCodecs, SIGNAL(currentIndexChanged(const QString&))
           , SLOT(codecChanged(const QString&)));
    connect(ui->lineEditChat, SIGNAL(returnPressed()), SLOT(sendMessage()));
-   connect( ui->checkBoxStabilize, SIGNAL(stateChanged(int))
-          , ui->player, SLOT(setStabilizing(int)));
+   connect(ui->checkBoxStabilize, SIGNAL(stateChanged(int)), SLOT(setStabilizing(int)));
+   connect( ui->contactList, SIGNAL(currentItemChanged(QListWidgetItem*, QListWidgetItem*))
+          , SLOT(contactChanged(QListWidgetItem*, QListWidgetItem*)));
+
+   loadContactList();
    codecChanged(ui->comboBoxCodecs->currentText());
-   ui->labelStatus->setText("Connecting");
-   setupXmpp();
-   cameras = 0;
-   microphones = 0;
-   playerVideoStream = 0;
-   remoteCamera = 0;
    updateHardware();
+   setupXmpp();
 }
 
 MainWindow::~MainWindow() { delete ui; }
 
+void MainWindow::loadContactList() {
+   //TODO: Load contact list from file
+   for(int i = 0; i < ui->contactList->count(); i++) {
+      Conversation* chat = new Conversation(ui->contactList->item(i)->text(), ui);
+      chats << chat;
+   }
+   ui->contactList->setCurrentRow(0);
+}
+
+void MainWindow::updateHardware() {
+   if(cameras) delete cameras;
+   cameras = new VideoHardware();
+   if(microphones) delete microphones;
+   microphones = new AudioHardware();
+   ui->comboCamera->addItems(cameras->getNames());
+   ui->comboMicrophone->addItems(microphones->getNames());
+}
+
+void MainWindow::setupXmpp() {
+   QXmppLogger::getLogger()->setLoggingType(QXmppLogger::StdoutLogging);
+   server.setDomain(LOCALHOST);
+   server.setPasswordChecker(new MyPasswordChecker());
+   server.listenForClients(QHostAddress(LOCALHOST));
+   server.listenForServers();
+   connect(&client, SIGNAL(connected()), this, SLOT(connected()));
+   connect(&client, SIGNAL(disconnected()), this, SLOT(disconnected()));
+   connect( &client, SIGNAL(messageReceived(const QXmppMessage&))
+          , SLOT(messageReceived(const QXmppMessage&)));
+   connect( &transferManager, SIGNAL(fileReceived(QXmppTransferJob*))
+          , this, SLOT(fileTransferRequest(QXmppTransferJob*)));
+   connect( &callManager, SIGNAL(callReceived(QXmppCall*))
+          , this, SLOT(callRequest(QXmppCall*)));
+   QXmppConfiguration config;
+   config.setUser(USERNAME);
+   //Uses actual IP address
+   config.setHost(LOCALHOST);
+   config.setDomain(LOCALHOST);
+   config.setPassword("password");
+   client.addExtension(&transferManager);
+   client.addExtension(&callManager);
+   ui->labelStatus->setText("Connecting");
+   client.connectToServer(config);
+}
+
+Conversation* MainWindow::jidToConversation(QString jid) {
+   foreach(Conversation* chat, chats) if(chat->assignedTo(jid)) return chat;
+}
+
+void MainWindow::shutdown() {
+   foreach(Conversation* chat, chats) delete chat;
+   chats.clear();
+   if(client.state() == QXmppClient::ConnectedState) {
+      connect(&client, SIGNAL(disconnected()), SLOT(close()));
+      client.disconnectFromServer();
+   } else {
+      close();
+   }
+}
+
+void MainWindow::startCall() {
+   if(ui->contactList->currentRow() < 0) return;
+   chats[ui->contactList->currentRow()]->startCall();
+}
+
+void MainWindow::stopCall() {
+   if(ui->contactList->currentRow() < 0) return;
+   chats[ui->contactList->currentRow()]->stopCall();
+   ui->player->reset();
+   ui->comboBoxCodecs->setEnabled(true);
+}
+
+void MainWindow::sendFile() {
+   if(ui->contactList->currentRow() < 0) return;
+   QString filename = QFileDialog::getOpenFileName(this,"Open file","", "Any file (*.*)");
+   if(filename.isNull()) return;
+   ui->labelStatus->setText("Trying to send file");
+   chats[ui->contactList->currentRow()]->sendFile(filename);
+}
+
+void MainWindow::sendMessage() {
+   if(ui->contactList->currentRow() < 0) return;
+   QString text = ui->lineEditChat->text();
+   ui->lineEditChat->clear();
+   chats[ui->contactList->currentRow()]->sendMessage(text);
+}
+
 void MainWindow::codecChanged(const QString &codecName) {
-   qDebug("Codec changed");
    QList<CodecID> codecs;
    if(codecName == "MJPEG")
       codecs << CODEC_ID_MJPEG;
@@ -54,15 +142,37 @@ void MainWindow::codecChanged(const QString &codecName) {
    callManager.setCodecs(codecs);
 }
 
-void MainWindow::shutdown() {
-   if(call) call->hangup();
-   if(remoteCamera) stopCall();
-   if(client.state() == QXmppClient::ConnectedState) {
-      doExit = true;
-      client.disconnectFromServer();
-   } else {
-      close();
+void MainWindow::contactChanged(QListWidgetItem* curItem, QListWidgetItem* prevItem) {
+   jidToConversation(prevItem->text())->stop();
+   jidToConversation(curItem->text())->start();
+   /*
+   Conversation* chat = jidToConversation(contactName);
+   ui->textEditChat->clear();
+   foreach(Conversation::Message mes, chat->messages()) {
+      if(mes.type == Conversation::RemoteMessage) {
+         ui->textEditChat->append(mes.text);
+         ui->textEditChat->setAlignment(Qt::AlignRight);
+      } else {
+         ui->textEditChat->append(mes.text);
+         ui->textEditChat->setAlignment(Qt::AlignLeft);
+      }
    }
+   connect(chat, SIGNAL(canSendFile(bool)), SLOT(canSendFile(bool)));
+   connect(chat, SIGNAL(canCall(bool)), SLOT(canCall(bool)));
+   connect(chat, SIGNAL(canText(bool)), SLOT(canText(bool)));
+   connect(chat, 
+   if(chat->canSendFile()) { ui->buttonSendFile->setEnabled(false); }
+   else { ui->buttonSendFile->setEnabled(false); }
+   if(chat->canCall()) { ui->buttonCall->setEnabled(false); }
+   else { ui->buttonCall->setEnabled(false); }
+   if(chat->canText()) { ui->lineEditChat->setEnabled(false); }
+   else { ui->lineEditChat->setEnabled(false); }
+   */
+}
+
+//TODO: implement
+void MainWindow::setStabilizing(int state) {
+
 }
 
 void MainWindow::connected() {
@@ -74,77 +184,10 @@ void MainWindow::connected() {
 void MainWindow::disconnected() {
    ui->buttonCall->setEnabled(false);
    ui->buttonSendFile->setEnabled(false);
-   ui->labelStatus->setText("Connecting");
-   if(doExit) close();
+   ui->labelStatus->setText("Disconnected");
 }
 
-void MainWindow::startCall() {
-   if(ui->contactList->selectedItems().count() < 1) return;
-   QString contactName = ui->contactList->selectedItems()[0]->text();
-   if(contactName.startsWith("camera")) {
-      contactName.replace("camera@","");
-      remoteCamera = new InputGeneric("http://"+contactName+"/mjpg/video.mjpg","mjpeg");
-      remoteCamera->setState(Input::Playing);
-      StreamInfo info;
-      info.type = Video;
-      info.video.width = 640;
-      info.video.height = 480;
-      info.video.fps = 30;
-      info.video.pixelFormat = PIX_FMT_YUV420P;
-      if(playerVideoStream) ui->player->removeStream(playerVideoStream);
-      playerVideoStream = ui->player->addStream(info);
-      remoteCamera->getStreams()[0]->subscribe(playerVideoStream);
-      ui->buttonCall->hide();
-      ui->buttonHangup->show();
-   } else { 
-      call = callManager.call(contactName);
-      connect( call, SIGNAL(connected()),this,SLOT(callConnected()));
-      connect( call, SIGNAL(finished()), this,SLOT(callFinished()));
-      connect( call, SIGNAL(audioModeChanged(QIODevice::OpenMode)), this
-             , SLOT(callAudioModeChanged(QIODevice::OpenMode)));
-      connect( call, SIGNAL(videoModeChanged(QIODevice::OpenMode)), this
-             , SLOT(callVideoModeChanged(QIODevice::OpenMode)));
-   }
-   //ui->comboBoxCodecs->setEnabled(false);
-}
-
-void MainWindow::stopCall() {
-   if(remoteCamera) {
-      delete remoteCamera;
-      remoteCamera = 0;
-      ui->buttonHangup->hide();
-      ui->buttonCall->show();
-   } else {
-      call->hangup();
-   }
-   ui->player->reset();
-   ui->comboBoxCodecs->setEnabled(true);
-}
-
-void MainWindow::sendFile() {
-   if(ui->contactList->selectedItems().count() < 1) return;
-   QString contactName = ui->contactList->selectedItems()[0]->text();
-   QString filename = QFileDialog::getOpenFileName(this,"Open file","", "Any file (*.*)");
-   if(filename.isNull()) return;
-   ui->labelStatus->setText("Trying to send file");
-   QXmppTransferJob* job = transferManager.sendFile(contactName,filename);
-   connect( job, SIGNAL(error(QXmppTransferJob::Error))
-          , this, SLOT(fileTransferError(QXmppTransferJob::Error)));
-   connect( job, SIGNAL(progress(qint64,qint64))
-          , this, SLOT(fileTransferProgress(qint64,qint64)));
-}
-
-void MainWindow::sendMessage() {
-   if(ui->contactList->selectedItems().count() < 1) return;
-   QString text = ui->lineEditChat->text();
-   ui->lineEditChat->clear();
-   QString contactName = ui->contactList->selectedItems()[0]->text();
-   ui->textEditChat->append(text);
-   ui->textEditChat->setAlignment(Qt::AlignLeft);
-   //TODO: Don't send message to self
-   client.sendMessage(contactName, text);
-}
-
+//TODO: find out who sent this and reroute to appropriate conversation
 void MainWindow::messageReceived(const QXmppMessage& message) {
    qDebug("Message received");
    ui->textEditChat->append(message.body());
@@ -164,11 +207,7 @@ void MainWindow::fileTransferRequest(QXmppTransferJob* job) {
                                                         ,"Any file (*.*)");
          if(filename.isNull()) job->abort();
          ui->labelStatus->setText("Trying to receive file");
-         connect( job, SIGNAL(error(QXmppTransferJob::Error))
-                , this, SLOT(fileTransferError(QXmppTransferJob::Error)));
-         connect( job, SIGNAL(progress(qint64,qint64))
-                , this, SLOT(fileTransferProgress(qint64,qint64)));
-         job->accept(filename);
+         jidToConversation(job->jid())->fileRequest(job, filename);
          break;
       case QMessageBox::No:
          job->abort();
@@ -176,30 +215,7 @@ void MainWindow::fileTransferRequest(QXmppTransferJob* job) {
    }
 }
 
-void MainWindow::fileTransferStarted(QXmppTransferJob* job) {
-   ui->labelStatus->hide();
-   ui->progressBarStatus->show();
-   ui->progressBarStatus->setMinimum(0);
-   ui->progressBarStatus->setMaximum(job->fileInfo().size());
-   ui->progressBarStatus->setValue(0);
-}
-
-void MainWindow::fileTransferFinished(QXmppTransferJob* job) {
-   ui->progressBarStatus->hide();
-   ui->labelStatus->show();
-   ui->labelStatus->setText("Connected");
-   //QMessageBox msgBox;
-   //msgBox.setText("File transfer finished");
-   //msgBox.exec();
-}
-
-void MainWindow::fileTransferProgress(qint64 done, qint64 total) {
-   ui->progressBarStatus->setValue(done);
-}
-
-void MainWindow::fileTransferError(QXmppTransferJob::Error error) { }
-
-void MainWindow::callReceived(QXmppCall* call) {
+void MainWindow::callRequest(QXmppCall* call) {
    QMessageBox msgBox;
    msgBox.setText("Requesting call from user " + call->jid() + ". Accept?");
    msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
@@ -207,137 +223,10 @@ void MainWindow::callReceived(QXmppCall* call) {
    int ret = msgBox.exec();
    switch(ret) {
       case QMessageBox::Yes:
-         this->call = call;
-         connect( call, SIGNAL(connected()),this,SLOT(callConnected()));
-         connect( call, SIGNAL(finished()), this,SLOT(callFinished()));
-         connect( call, SIGNAL(audioModeChanged(QIODevice::OpenMode)), this
-                , SLOT(callAudioModeChanged(QIODevice::OpenMode)));
-         connect( call, SIGNAL(videoModeChanged(QIODevice::OpenMode)), this
-                , SLOT(callVideoModeChanged(QIODevice::OpenMode)));
-         call->accept();
+         jidToConversation(call->jid())->callRequest(call);
          break;
       case QMessageBox::No:
          call->hangup();
          break;
    }
-}
-
-void MainWindow::callConnected() {
-   //QXmppCall* call = static_cast<QXmppCall*>(sender());
-   ui->comboBoxCodecs->setEnabled(false);
-   ui->buttonCall->hide();
-   ui->buttonHangup->show();
-   ui->buttonCall->setEnabled(false);
-   if(call->direction() == QXmppCall::OutgoingDirection) call->startVideo();
-}
-
-void MainWindow::callFinished() {
-   //QXmppCall* call = static_cast<QXmppCall*>(sender());
-   if(call->direction() == QXmppCall::OutgoingDirection) call->stopVideo();
-   call = 0;
-   ui->player->reset();
-   ui->comboBoxCodecs->setEnabled(true);
-   ui->buttonCall->setEnabled(true);
-   ui->buttonHangup->hide();
-   ui->buttonCall->show();
-}
-
-//TODO: Implement
-void MainWindow::callAudioModeChanged(QIODevice::OpenMode) { }
-
-void MainWindow::callVideoModeChanged(QIODevice::OpenMode mode) {
-   //QXmppCall* call = static_cast<QXmppCall*>(sender());
-   if(mode & QIODevice::ReadOnly) {
-      qDebug() << "Opening device";
-      serverVideoStream = new RtpOutputStream(call);
-      InputStream *cameraStream = 0;
-      int camIndex = ui->comboCamera->currentIndex();
-      camera = new InputGeneric( cameras->getFiles()[camIndex]
-                               , cameras->getFormats()[camIndex]);
-      if(camera->getStreams().count() < 1) {
-         qWarning("Camera has no streams");
-         //TODO: Or maybe just stop sending video?
-         call->hangup();
-         return;
-      }
-      camera->setState(Input::Playing);
-      cameraStream  = camera->getStreams()[0];
-      cameraStream->subscribe(serverVideoStream);
-      QXmppVideoFormat videoFormat;
-      videoFormat.setFrameRate(30);
-      videoFormat.setFrameSize(QSize(640,480));
-      videoFormat.setPixelFormat(PIX_FMT_YUV420P);
-      call->videoChannel()->setEncoderFormat(videoFormat);
-      StreamInfo info;
-      info.type = Video;
-      info.video.width = 640;
-      info.video.height = 480;
-      info.video.fps = 30;
-      info.video.pixelFormat = PIX_FMT_YUV420P;
-      if(playerVideoStream) ui->player->removeStream(playerVideoStream);
-      playerVideoStream = ui->player->addStream(info);
-      if(!timer.isActive()) {
-         connect(&timer, SIGNAL(timeout()), this, SLOT(readFrames()));
-         timer.start();
-      }
-   } else if(mode == QIODevice::NotOpen) {
-      qDebug() << "Closing device";
-      delete camera;
-      disconnect(&timer, SIGNAL(timeout()), this, SLOT(readFrames()));
-      timer.stop();
-   } else {
-      qDebug() << "Got some oher opennmode" << (int)mode;
-   }
-}
-
-void MainWindow::readFrames() {
-   AVFrame* frame = 0;
-   QList<AVFrame*> frames = call->videoChannel()->readFrames();
-   if(frames.count() == 0) return;
-   foreach(AVFrame* posFrame, frames) {
-      if(frame) av_free(frame);
-      frame = posFrame;
-   }
-   playerVideoStream->process(frame);
-   av_free(frame);
-}
-
-void MainWindow::setupXmpp() {
-   QXmppLogger::getLogger()->setLoggingType(QXmppLogger::StdoutLogging);
-   server.setDomain(LOCALHOST);
-   server.setPasswordChecker(new MyPasswordChecker());
-   server.listenForClients(QHostAddress(LOCALHOST));
-   server.listenForServers();
-   transferManager.setSupportedMethods(QXmppTransferJob::SocksMethod);
-   connect( &transferManager, SIGNAL(fileReceived(QXmppTransferJob*))
-          , this, SLOT(fileTransferRequest(QXmppTransferJob*)));
-   connect( &transferManager, SIGNAL(jobStarted(QXmppTransferJob*))
-          , this, SLOT(fileTransferStarted(QXmppTransferJob*)));
-   connect( &transferManager, SIGNAL(jobFinished(QXmppTransferJob*))
-          , this, SLOT(fileTransferFinished(QXmppTransferJob*)));
-   connect( &callManager, SIGNAL(callReceived(QXmppCall*))
-          , this, SLOT(callReceived(QXmppCall*)));
-   connect( &client, SIGNAL(connected()), this, SLOT(connected()));
-   connect( &client, SIGNAL(disconnected()), this, SLOT(disconnected()));
-   connect( &client, SIGNAL(messageReceived(const QXmppMessage&))
-          , SLOT(messageReceived(const QXmppMessage&)));
-   QXmppConfiguration config;
-   config.setUser(USERNAME);
-   //Uses actual IP address
-   config.setHost(LOCALHOST);
-   config.setDomain(LOCALHOST);
-   config.setPassword("password");
-   client.addExtension(&transferManager);
-   client.addExtension(&callManager);
-   client.connectToServer(config);
-   call = 0;
-}
-
-void MainWindow::updateHardware() {
-   if(cameras) delete cameras;
-   cameras = new VideoHardware();
-   if(microphones) delete microphones;
-   microphones = new AudioHardware();
-   ui->comboCamera->addItems(cameras->getNames());
-   ui->comboMicrophone->addItems(microphones->getNames());
 }
