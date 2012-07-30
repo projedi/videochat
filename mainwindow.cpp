@@ -5,6 +5,7 @@
 #include <QFileDialog>
 #include "streaming.h"
 #include <stabilization.h>
+#include <QNetworkInterface>
 
 #define USERNAME "username"
 
@@ -309,9 +310,15 @@ void MainWindow::readFrames() {
 }
 
 void MainWindow::setupXmpp() {
-   fstream configfile("config.txt",fstream::in);
-   char localhost[16];
-   configfile >> localhost;
+   QString localhost;
+   QList<QNetworkInterface> lsnet = QNetworkInterface::allInterfaces();
+   foreach(QNetworkInterface inet, lsnet) {
+      if(!(inet.flags() & QNetworkInterface::IsLoopBack) && (inet.flags() & QNetworkInterface::IsRunning)) {
+         qDebug("There are %d addresses to interface", inet.addressEntries().count());
+         foreach(QNetworkAddressEntry addr, inet.addressEntries()) qDebug() << addr.ip();
+         localhost = inet.addressEntries()[0].ip().toString();
+      }
+   }
    QXmppLogger::getLogger()->setLoggingType(QXmppLogger::StdoutLogging);
    server.setDomain(localhost);
    server.setPasswordChecker(new MyPasswordChecker());
