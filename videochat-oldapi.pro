@@ -18,30 +18,19 @@ TARGET = videochat-oldapi
 TEMPLATE = app
 
 SOURCES += main.cpp \
-           logging.cpp \
            mainwindow.cpp \
-           callrequest.cpp \
-           callresponse.cpp \
-           callscreen.cpp \
            ffmpeg/input.cpp \
            ffmpeg/output.cpp \
            ffmpeg/hardware.cpp \
            ffmpeg/player.cpp \
            streaming.cpp
 
-HEADERS  += logging.h \
-            mainwindow.h \
-            callrequest.h \
-            callresponse.h \
-            callscreen.h \
+HEADERS  += mainwindow.h \
             ffmpeg.h \
             ffmpeg/input.h \
             ffmpeg/output.h \
             ffmpeg/hardware.h \
-            player.h \
+            ffmpeg/player.h \
             streaming.h
 
-FORMS    += mainwindow.ui \
-            callrequest.ui \
-            callresponse.ui \
-            callscreen.ui
+FORMS    += mainwindow.ui
