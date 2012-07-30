@@ -316,8 +316,11 @@ void MainWindow::setupXmpp() {
       if(!(inet.flags() & QNetworkInterface::IsLoopBack) && (inet.flags() & QNetworkInterface::IsRunning)) {
          if(inet.addressEntries().count() < 1) continue;
          qDebug("There are %d addresses to interface", inet.addressEntries().count());
-         foreach(QNetworkAddressEntry addr, inet.addressEntries()) qDebug() << addr.ip();
-         localhost = inet.addressEntries()[0].ip().toString();
+         foreach(QNetworkAddressEntry addr, inet.addressEntries()) {
+            qDebug() << addr.ip();
+            if(addr.ip().protocol() == QAbstractSocket::IPv4Protocol)
+               localhost = addr.ip().toString();
+         }
       }
    }
    QXmppLogger::getLogger()->setLoggingType(QXmppLogger::StdoutLogging);
