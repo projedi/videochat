@@ -59,9 +59,12 @@ VideoHardware::VideoHardware() {
    pSysDevEnum->Release();
    */
 
-   names.append("Default webcam");
+   names.append("DirectShow");
    formats.append("dshow");
    files.append("video=Venus USB2.0 Camera");
+   names.append("VfW");
+   formats.append("vfwcap");
+   files.append("0");
 #endif
 }
 

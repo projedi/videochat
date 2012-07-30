@@ -73,7 +73,7 @@ void MainWindow::shutdown() {
 void MainWindow::connected() {
    ui->buttonCall->setEnabled(true);
    ui->buttonSendFile->setEnabled(true);
-   ui->labelStatus->setText("Connected");
+   ui->labelStatus->setText("On " + server.domain());
 }
 
 void MainWindow::disconnected() {
