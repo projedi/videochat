@@ -11,6 +11,7 @@
 #include <qxmpp/QXmppCallManager.h>
 #include <qxmpp/QXmppRtpChannel.h>
 #include "conversation.h"
+#include <QListWidgetItem>
 
 namespace Ui { class MainWindow; }
 

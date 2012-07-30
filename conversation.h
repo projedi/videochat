@@ -8,6 +8,7 @@
 #include <QLineEdit>
 #include <QTextEdit>
 #include <qxmpp/QXmppCallManager.h>
+#include <qxmpp/QXmppTransferManager.h>
 #include "ffmpeg.h"
 
 namespace Ui { class MainWindow; }
@@ -46,4 +47,5 @@ private:
    QComboBox* comboBoxCodecs;
    QLineEdit* lineEditChat;
    QTextEdit* textEditChat;
+   Player* player;
 };

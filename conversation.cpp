@@ -1,6 +1,7 @@
 #include "conversation.h"
+#include "ui_mainwindow.h"
 
-Conversation::Conversation(QString jid, Ui::Mainwindow *ui) {
+Conversation::Conversation(QString jid, Ui::MainWindow *ui) {
    this->jid = jid;
    call = 0;
    remoteCamera = 0;
@@ -12,9 +13,11 @@ Conversation::Conversation(QString jid, Ui::Mainwindow *ui) {
    comboBoxCodecs = ui->comboBoxCodecs;
    lineEditChat = ui->lineEditChat;
    textEditChat = ui->textEditChat;
+   player = ui->player;
 }
 
-Conversation::~Conversation() { }
+Conversation::~Conversation() {
+}
 
 void Conversation::start() {
 
@@ -25,8 +28,7 @@ void Conversation::stop() {
 }
 
 void Conversation::startCall() {
-/*
-   QString contactName = ui->contactList->selectedItems()[0]->text();
+   QString contactName = jid;
    if(contactName.startsWith("camera")) {
       contactName.replace("camera@","");
       remoteCamera = new InputGeneric("http://"+contactName+"/mjpg/video.mjpg","mjpeg");
@@ -37,8 +39,8 @@ void Conversation::startCall() {
       info.video.height = 480;
       info.video.fps = 30;
       info.video.pixelFormat = PIX_FMT_YUV420P;
-      if(playerVideoStream) ui->player->removeStream(playerVideoStream);
-      playerVideoStream = ui->player->addStream(info);
+      if(playerVideoStream) player->removeStream(playerVideoStream);
+      playerVideoStream = player->addStream(info);
       remoteCamera->getStreams()[0]->subscribe(playerVideoStream);
       ui->buttonCall->hide();
       ui->buttonHangup->show();
@@ -51,7 +53,6 @@ void Conversation::startCall() {
       connect( call, SIGNAL(videoModeChanged(QIODevice::OpenMode)), this
              , SLOT(callVideoModeChanged(QIODevice::OpenMode)));
    }
-   */
 }
 
 void Conversation::stopCall() {
