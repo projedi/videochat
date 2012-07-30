@@ -6,19 +6,16 @@
 #include "streaming.h"
 #include <stabilization.h>
 
-#if defined(LINUX)
-#define LOCALHOST "192.168.0.102"
-#elif defined(WIN32)
-#define LOCALHOST "192.168.0.101"
-#endif
 #define USERNAME "username"
 
 #include <iostream>
+#include <fstream>
 using namespace std;
 
 MainWindow::MainWindow(QWidget *parent): QMainWindow(parent), ui(new Ui::MainWindow) {
    doExit = false;
    ui->setupUi(this);
+   loadContacts();
    ui->contactList->setCurrentRow(0);
    connect(ui->buttonExit, SIGNAL(clicked()),SLOT(shutdown()));
    connect(ui->buttonCall, SIGNAL(clicked()), SLOT(startCall()));
@@ -30,7 +27,6 @@ MainWindow::MainWindow(QWidget *parent): QMainWindow(parent), ui(new Ui::MainWin
    connect( ui->checkBoxStabilize, SIGNAL(stateChanged(int))
           , ui->player, SLOT(setStabilizing(int)));
    codecChanged(ui->comboBoxCodecs->currentText());
-   ui->labelStatus->setText("Connecting");
    setupXmpp();
    cameras = 0;
    microphones = 0;
@@ -40,6 +36,15 @@ MainWindow::MainWindow(QWidget *parent): QMainWindow(parent), ui(new Ui::MainWin
 }
 
 MainWindow::~MainWindow() { delete ui; }
+
+void MainWindow::loadContacts() {
+   fstream contactsfile("contacts.txt",fstream::in);
+   char contactName[100];
+   while(!contactsfile.eof()) {
+      contactsfile.getline(contactName,100);
+      ui->contactList->addItem(QString::fromAscii(contactName));
+   }
+}
 
 void MainWindow::codecChanged(const QString &codecName) {
    qDebug("Codec changed");
@@ -227,6 +232,7 @@ void MainWindow::callConnected() {
    ui->buttonCall->hide();
    ui->buttonHangup->show();
    ui->buttonCall->setEnabled(false);
+   ui->contactList->setEnabled(false);
    if(call->direction() == QXmppCall::OutgoingDirection) call->startVideo();
 }
 
@@ -239,6 +245,7 @@ void MainWindow::callFinished() {
    ui->buttonCall->setEnabled(true);
    ui->buttonHangup->hide();
    ui->buttonCall->show();
+   ui->contactList->setEnabled(true);
 }
 
 //TODO: Implement
@@ -302,10 +309,13 @@ void MainWindow::readFrames() {
 }
 
 void MainWindow::setupXmpp() {
+   fstream configfile("config.txt",fstream::in);
+   char localhost[16];
+   configfile >> localhost;
    QXmppLogger::getLogger()->setLoggingType(QXmppLogger::StdoutLogging);
-   server.setDomain(LOCALHOST);
+   server.setDomain(localhost);
    server.setPasswordChecker(new MyPasswordChecker());
-   server.listenForClients(QHostAddress(LOCALHOST));
+   server.listenForClients(QHostAddress(localhost));
    server.listenForServers();
    transferManager.setSupportedMethods(QXmppTransferJob::SocksMethod);
    connect( &transferManager, SIGNAL(fileReceived(QXmppTransferJob*))
@@ -323,12 +333,13 @@ void MainWindow::setupXmpp() {
    QXmppConfiguration config;
    config.setUser(USERNAME);
    //Uses actual IP address
-   config.setHost(LOCALHOST);
-   config.setDomain(LOCALHOST);
+   config.setHost(localhost);
+   config.setDomain(localhost);
    config.setPassword("password");
    client.addExtension(&transferManager);
    client.addExtension(&callManager);
    client.connectToServer(config);
+   ui->labelStatus->setText("Connecting");
    call = 0;
 }
 

@@ -11,3 +11,5 @@ release/
 *.Debug
 *.Release
 *.log
+config.txt
+contacts.txt

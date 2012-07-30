@@ -53,6 +53,7 @@ private slots:
    void callVideoModeChanged(QIODevice::OpenMode);
    void readFrames();
 private:
+   void loadContacts();
    void setupXmpp();
    void updateHardware();
    void setupCamera(int camIndex);
