@@ -59,7 +59,10 @@ void MainWindow::cameraChanged(int camIndex) {
    }
 }
 
-MainWindow::~MainWindow() { delete ui; }
+MainWindow::~MainWindow() {
+   if(camera) { delete camera; camera = 0; }
+   delete ui;
+}
 
 void MainWindow::loadContacts() {
    fstream contactsfile("contacts.txt",fstream::in);
@@ -83,7 +86,6 @@ void MainWindow::codecChanged(const QString &codecName) {
 }
 
 void MainWindow::shutdown() {
-   if(camera) delete camera;
    if(call) call->hangup();
    if(remoteCamera) stopCall();
    if(client.state() == QXmppClient::ConnectedState) {
@@ -147,6 +149,10 @@ void MainWindow::stopCall() {
    }
    ui->player->reset();
    ui->comboBoxCodecs->setEnabled(true);
+   ui->lineEditBitrate->setEnabled(true);
+   ui->spinBoxKeyFrame->setEnabled(true);
+   ui->spinBoxFPS->setEnabled(true);
+   ui->comboBoxSize->setEnabled(true);
 }
 
 void MainWindow::sendFile() {
@@ -249,6 +255,10 @@ void MainWindow::callReceived(QXmppCall* call) {
 
 void MainWindow::callConnected() {
    ui->comboBoxCodecs->setEnabled(false);
+   ui->lineEditBitrate->setEnabled(false);
+   ui->spinBoxKeyFrame->setEnabled(false);
+   ui->spinBoxFPS->setEnabled(false);
+   ui->comboBoxSize->setEnabled(false);
    ui->buttonCall->hide();
    ui->buttonHangup->show();
    ui->buttonCall->setEnabled(false);
@@ -261,6 +271,10 @@ void MainWindow::callFinished() {
    call = 0;
    ui->player->reset();
    ui->comboBoxCodecs->setEnabled(true);
+   ui->lineEditBitrate->setEnabled(true);
+   ui->spinBoxKeyFrame->setEnabled(true);
+   ui->spinBoxFPS->setEnabled(true);
+   ui->comboBoxSize->setEnabled(true);
    ui->buttonCall->setEnabled(true);
    ui->buttonHangup->hide();
    ui->buttonCall->show();
@@ -278,11 +292,14 @@ void MainWindow::callVideoModeChanged(QIODevice::OpenMode mode) {
       if(!cameraStream) call->hangup();
       cameraStream->subscribe(serverVideoStream);
       QXmppVideoFormat videoFormat;
-      videoFormat.setFrameRate(30);
-      videoFormat.setFrameSize(QSize(640,480));
+      videoFormat.setFrameRate(ui->spinBoxFPS->value());
+      if(ui->comboBoxSize->currentText() == "640x480")
+         videoFormat.setFrameSize(QSize(640,480));
+      else if(ui->comboBoxSize->currentText() == "320x240")
+         videoFormat.setFrameSize(QSize(320,480));
       videoFormat.setPixelFormat(PIX_FMT_YUV420P);
-      videoFormat.setGopSize(5);
-      videoFormat.setBitrate(800000);
+      videoFormat.setGopSize(ui->spinBoxKeyFrame->value());
+      videoFormat.setBitrate(ui->lineEditBitrate->text().toInt());
       call->videoChannel()->setEncoderFormat(videoFormat);
       StreamInfo info;
       info.type = Video;
