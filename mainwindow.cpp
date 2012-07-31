@@ -310,6 +310,7 @@ void MainWindow::readFrames() {
 }
 
 void MainWindow::setupXmpp() {
+   /*
    QString localhost;
    QList<QNetworkInterface> lsnet = QNetworkInterface::allInterfaces();
    foreach(QNetworkInterface inet, lsnet) {
@@ -323,10 +324,15 @@ void MainWindow::setupXmpp() {
          }
       }
    }
+   */
+   fstream configfile("config.txt",fstream::in);
+   char localhostStr[100];
+   configfile.getline(localhostStr,100);
+   QString localhost = QString::fromAscii(localhostStr);
    QXmppLogger::getLogger()->setLoggingType(QXmppLogger::StdoutLogging);
    server.setDomain(localhost);
    server.setPasswordChecker(new MyPasswordChecker());
-   server.listenForClients(QHostAddress(localhost));
+   server.listenForClients(QHostAddress::LocalHost);
    server.listenForServers();
    transferManager.setSupportedMethods(QXmppTransferJob::SocksMethod);
    connect( &transferManager, SIGNAL(fileReceived(QXmppTransferJob*))
@@ -344,7 +350,7 @@ void MainWindow::setupXmpp() {
    QXmppConfiguration config;
    config.setUser(USERNAME);
    //Uses actual IP address
-   config.setHost(localhost);
+   config.setHost("127.0.0.1");
    config.setDomain(localhost);
    config.setPassword("password");
    client.addExtension(&transferManager);

@@ -12,3 +12,4 @@ release/
 *.Release
 *.log
 contacts.txt
+config.txt
