@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>889</width>
-    <height>530</height>
+    <height>559</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -490,6 +490,19 @@ radius: 1.35, stop: 0 #f00, stop: 1 #c00);
     </property>
     <property name="value">
      <number>30</number>
+    </property>
+   </widget>
+   <widget class="QCheckBox" name="checkBoxMaintainQuality">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>530</y>
+      <width>121</width>
+      <height>19</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Maintain quality</string>
     </property>
    </widget>
   </widget>

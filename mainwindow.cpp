@@ -77,7 +77,7 @@ void MainWindow::codecChanged(const QString &codecName) {
    qDebug("Codec changed");
    QList<CodecID> codecs;
    if(codecName == "MJPEG")
-      codecs << CODEC_ID_JPEG2000;
+      codecs << CODEC_ID_MJPEG;
    else if(codecName == "H.264")
       codecs << CODEC_ID_H264;
    else
@@ -150,6 +150,7 @@ void MainWindow::stopCall() {
    ui->player->reset();
    ui->comboBoxCodecs->setEnabled(true);
    ui->lineEditBitrate->setEnabled(true);
+   ui->checkBoxMaintainQuality->setEnabled(true);
    ui->spinBoxKeyFrame->setEnabled(true);
    ui->spinBoxFPS->setEnabled(true);
    ui->comboBoxSize->setEnabled(true);
@@ -256,6 +257,7 @@ void MainWindow::callReceived(QXmppCall* call) {
 void MainWindow::callConnected() {
    ui->comboBoxCodecs->setEnabled(false);
    ui->lineEditBitrate->setEnabled(false);
+   ui->checkBoxMaintainQuality->setEnabled(false);
    ui->spinBoxKeyFrame->setEnabled(false);
    ui->spinBoxFPS->setEnabled(false);
    ui->comboBoxSize->setEnabled(false);
@@ -272,6 +274,7 @@ void MainWindow::callFinished() {
    ui->player->reset();
    ui->comboBoxCodecs->setEnabled(true);
    ui->lineEditBitrate->setEnabled(true);
+   ui->checkBoxMaintainQuality->setEnabled(true);
    ui->spinBoxKeyFrame->setEnabled(true);
    ui->spinBoxFPS->setEnabled(true);
    ui->comboBoxSize->setEnabled(true);
@@ -300,6 +303,10 @@ void MainWindow::callVideoModeChanged(QIODevice::OpenMode mode) {
       videoFormat.setPixelFormat(PIX_FMT_YUV420P);
       videoFormat.setGopSize(ui->spinBoxKeyFrame->value());
       videoFormat.setBitrate(ui->lineEditBitrate->text().toInt());
+      if(ui->checkBoxMaintainQuality->checkState() == Qt::Checked)
+         videoFormat.setQscale(1);
+      else
+         videoFormat.setQscale(-1);
       call->videoChannel()->setEncoderFormat(videoFormat);
       StreamInfo info;
       info.type = Video;
