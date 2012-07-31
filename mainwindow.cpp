@@ -304,7 +304,6 @@ void MainWindow::callVideoModeChanged(QIODevice::OpenMode mode) {
       }
    } else if(mode == QIODevice::NotOpen) {
       qDebug() << "Closing device";
-      delete serverVideoStream;
       disconnect(&timer, SIGNAL(timeout()), this, SLOT(readFrames()));
       timer.stop();
    } else {
