@@ -12,5 +12,4 @@ public:
    void process(AVFrame*);
 private:
    QXmppCall* call;
-   SwsContext* scaler;
 };

@@ -59,7 +59,9 @@ void InputStream::subscribe(OutputStream* client) {
 
 void InputStream::unsubscribe(OutputStream* client) {
    QMutexLocker l(&subscribersLock);
-   subscribers.removeOne(client);
+   qDebug("unsubscribe: removing a client");
+   if(!subscribers.removeOne(client))
+      qWarning("unsubscribe: non-existent client");
 }
 
 void InputStream::process(AVPacket* pkt) {

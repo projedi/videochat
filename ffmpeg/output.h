@@ -4,6 +4,7 @@
 
 class OutputStream {
 public:
+   virtual ~OutputStream() { }
    virtual void process(AVFrame* frame) = 0;
    virtual StreamInfo info() = 0;
 };

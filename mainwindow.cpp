@@ -51,7 +51,7 @@ void MainWindow::cameraChanged(int camIndex) {
       cameraStream = 0;
    } else {
       camera->setState(Input::Playing);
-      cameraStream  = camera->getStreams()[0];
+      cameraStream = camera->getStreams()[0];
       if(!playerLocalVideoStream)
          playerLocalVideoStream = ui->playerLocal->addStream(cameraStream->info());
       cameraStream->subscribe(playerLocalVideoStream);
@@ -273,6 +273,7 @@ void MainWindow::callAudioModeChanged(QIODevice::OpenMode) { }
 void MainWindow::callVideoModeChanged(QIODevice::OpenMode mode) {
    if(mode & QIODevice::ReadOnly) {
       qDebug() << "Opening device";
+      if(serverVideoStream) delete serverVideoStream;
       serverVideoStream = new RtpOutputStream(call);
       if(!cameraStream) call->hangup();
       cameraStream->subscribe(serverVideoStream);
@@ -299,7 +300,7 @@ void MainWindow::callVideoModeChanged(QIODevice::OpenMode mode) {
       qDebug() << "Closing device";
       if(serverVideoStream) {
          if(cameraStream) cameraStream->unsubscribe(serverVideoStream);
-         //delete serverVideoStream;
+         delete serverVideoStream;
          serverVideoStream = 0;
       }
       disconnect(&timer, SIGNAL(timeout()), this, SLOT(readFrames()));
@@ -341,7 +342,7 @@ void MainWindow::setupXmpp() {
    char localhostStr[100];
    configfile.getline(localhostStr,100);
    QString localhost = QString::fromAscii(localhostStr);
-   QXmppLogger::getLogger()->setLoggingType(QXmppLogger::StdoutLogging);
+   //QXmppLogger::getLogger()->setLoggingType(QXmppLogger::StdoutLogging);
    server.setDomain(localhost);
    server.setPasswordChecker(new MyPasswordChecker());
    server.listenForClients(QHostAddress::LocalHost);
