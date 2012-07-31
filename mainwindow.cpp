@@ -303,10 +303,11 @@ void MainWindow::callVideoModeChanged(QIODevice::OpenMode mode) {
       videoFormat.setPixelFormat(PIX_FMT_YUV420P);
       videoFormat.setGopSize(ui->spinBoxKeyFrame->value());
       videoFormat.setBitrate(ui->lineEditBitrate->text().toInt());
-      if(ui->checkBoxMaintainQuality->checkState() == Qt::Checked)
-         videoFormat.setQscale(1);
-      else
-         videoFormat.setQscale(-1);
+      //if(ui->checkBoxMaintainQuality->checkState() == Qt::Checked)
+      //   videoFormat.setQscale(1);
+      //else
+      //   videoFormat.setQscale(-1);
+      videoFormat.setQscale(1);
       call->videoChannel()->setEncoderFormat(videoFormat);
       StreamInfo info;
       info.type = Video;
