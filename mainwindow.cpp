@@ -30,15 +30,16 @@ MainWindow::MainWindow(QWidget *parent): QMainWindow(parent), ui(new Ui::MainWin
    connect(ui->comboCamera, SIGNAL(currentIndexChanged(int)), SLOT(cameraChanged(int)));
    codecChanged(ui->comboBoxCodecs->currentText());
    setupXmpp();
+   camera = 0;
+   microphone = 0;
+   remoteCamera = 0;
+   serverVideoStream = 0;
+   playerVideoStream = 0;
+   playerLocalVideoStream = 0;
+   cameraStream = 0;
    cameras = 0;
    microphones = 0;
-   playerVideoStream = 0;
-   remoteCamera = 0;
-   playerLocalVideoStream = 0;
-   serverVideoStream = 0;
-   camera = 0;
    updateHardware();
-//   cameraChanged(ui->comboCamera->currentIndex());
 }
 
 void MainWindow::cameraChanged(int camIndex) {
@@ -51,7 +52,6 @@ void MainWindow::cameraChanged(int camIndex) {
    } else {
       camera->setState(Input::Playing);
       cameraStream  = camera->getStreams()[0];
-      //if(playerLocalVideoStream) ui->playerLocal->removeStream(playerLocalVideoStream);
       if(!playerLocalVideoStream)
          playerLocalVideoStream = ui->playerLocal->addStream(cameraStream->info());
       cameraStream->subscribe(playerLocalVideoStream);
@@ -134,7 +134,6 @@ void MainWindow::startCall() {
       connect( call, SIGNAL(videoModeChanged(QIODevice::OpenMode)), this
              , SLOT(callVideoModeChanged(QIODevice::OpenMode)));
    }
-   //ui->comboBoxCodecs->setEnabled(false);
 }
 
 void MainWindow::stopCall() {
@@ -217,9 +216,6 @@ void MainWindow::fileTransferFinished(QXmppTransferJob* job) {
    ui->progressBarStatus->hide();
    ui->labelStatus->show();
    ui->labelStatus->setText("Connected");
-   //QMessageBox msgBox;
-   //msgBox.setText("File transfer finished");
-   //msgBox.exec();
 }
 
 void MainWindow::fileTransferProgress(qint64 done, qint64 total) {
@@ -252,7 +248,6 @@ void MainWindow::callReceived(QXmppCall* call) {
 }
 
 void MainWindow::callConnected() {
-   //QXmppCall* call = static_cast<QXmppCall*>(sender());
    ui->comboBoxCodecs->setEnabled(false);
    ui->buttonCall->hide();
    ui->buttonHangup->show();
@@ -262,7 +257,6 @@ void MainWindow::callConnected() {
 }
 
 void MainWindow::callFinished() {
-   //QXmppCall* call = static_cast<QXmppCall*>(sender());
    if(call->direction() == QXmppCall::OutgoingDirection) call->stopVideo();
    call = 0;
    ui->player->reset();
@@ -277,18 +271,17 @@ void MainWindow::callFinished() {
 void MainWindow::callAudioModeChanged(QIODevice::OpenMode) { }
 
 void MainWindow::callVideoModeChanged(QIODevice::OpenMode mode) {
-   //QXmppCall* call = static_cast<QXmppCall*>(sender());
    if(mode & QIODevice::ReadOnly) {
       qDebug() << "Opening device";
       serverVideoStream = new RtpOutputStream(call);
-      if(!cameraStream) {
-         call->hangup();
-      }
+      if(!cameraStream) call->hangup();
       cameraStream->subscribe(serverVideoStream);
       QXmppVideoFormat videoFormat;
       videoFormat.setFrameRate(30);
       videoFormat.setFrameSize(QSize(640,480));
       videoFormat.setPixelFormat(PIX_FMT_YUV420P);
+      videoFormat.setGopSize(5);
+      videoFormat.setBitrate(800000);
       call->videoChannel()->setEncoderFormat(videoFormat);
       StreamInfo info;
       info.type = Video;
@@ -304,6 +297,11 @@ void MainWindow::callVideoModeChanged(QIODevice::OpenMode mode) {
       }
    } else if(mode == QIODevice::NotOpen) {
       qDebug() << "Closing device";
+      if(serverVideoStream) {
+         if(cameraStream) cameraStream->unsubscribe(serverVideoStream);
+         //delete serverVideoStream;
+         serverVideoStream = 0;
+      }
       disconnect(&timer, SIGNAL(timeout()), this, SLOT(readFrames()));
       timer.stop();
    } else {
