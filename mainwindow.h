@@ -33,6 +33,7 @@ public:
    ~MainWindow();
 private slots:
    void codecChanged(const QString&);
+   void cameraChanged(int camIndex);
    void shutdown();
    void connected();
    void disconnected();
@@ -56,15 +57,14 @@ private:
    void loadContacts();
    void setupXmpp();
    void updateHardware();
-   void setupCamera(int camIndex);
-   void setupMicrophone(int micIndex);
    Ui::MainWindow *ui;
    QXmppClient client;
    QXmppServer server;
    QXmppTransferManager transferManager;
    QXmppCallManager callManager;
    Input *camera, *microphone, *remoteCamera;
-   OutputStream *serverVideoStream, *playerVideoStream;
+   OutputStream *serverVideoStream, *playerVideoStream, *playerLocalVideoStream;
+   InputStream *cameraStream;
    VideoHardware* cameras;
    AudioHardware* microphones;
    QTimer timer;

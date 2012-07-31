@@ -27,13 +27,36 @@ MainWindow::MainWindow(QWidget *parent): QMainWindow(parent), ui(new Ui::MainWin
    connect(ui->lineEditChat, SIGNAL(returnPressed()), SLOT(sendMessage()));
    connect( ui->checkBoxStabilize, SIGNAL(stateChanged(int))
           , ui->player, SLOT(setStabilizing(int)));
+   connect(ui->comboCamera, SIGNAL(currentIndexChanged(int)), SLOT(cameraChanged(int)));
    codecChanged(ui->comboBoxCodecs->currentText());
    setupXmpp();
    cameras = 0;
    microphones = 0;
    playerVideoStream = 0;
    remoteCamera = 0;
+   playerLocalVideoStream = 0;
+   serverVideoStream = 0;
+   camera = 0;
    updateHardware();
+//   cameraChanged(ui->comboCamera->currentIndex());
+}
+
+void MainWindow::cameraChanged(int camIndex) {
+   if(camera) delete camera;
+   camera = new InputGeneric( cameras->getFiles()[camIndex]
+                            , cameras->getFormats()[camIndex]);
+   if(camera->getStreams().count() < 1) {
+      qWarning("Camera has no streams");
+      cameraStream = 0;
+   } else {
+      camera->setState(Input::Playing);
+      cameraStream  = camera->getStreams()[0];
+      //if(playerLocalVideoStream) ui->playerLocal->removeStream(playerLocalVideoStream);
+      if(!playerLocalVideoStream)
+         playerLocalVideoStream = ui->playerLocal->addStream(cameraStream->info());
+      cameraStream->subscribe(playerLocalVideoStream);
+      if(serverVideoStream) cameraStream->subscribe(serverVideoStream);
+   }
 }
 
 MainWindow::~MainWindow() { delete ui; }
@@ -60,6 +83,7 @@ void MainWindow::codecChanged(const QString &codecName) {
 }
 
 void MainWindow::shutdown() {
+   if(camera) delete camera;
    if(call) call->hangup();
    if(remoteCamera) stopCall();
    if(client.state() == QXmppClient::ConnectedState) {
@@ -257,18 +281,9 @@ void MainWindow::callVideoModeChanged(QIODevice::OpenMode mode) {
    if(mode & QIODevice::ReadOnly) {
       qDebug() << "Opening device";
       serverVideoStream = new RtpOutputStream(call);
-      InputStream *cameraStream = 0;
-      int camIndex = ui->comboCamera->currentIndex();
-      camera = new InputGeneric( cameras->getFiles()[camIndex]
-                               , cameras->getFormats()[camIndex]);
-      if(camera->getStreams().count() < 1) {
-         qWarning("Camera has no streams");
-         //TODO: Or maybe just stop sending video?
+      if(!cameraStream) {
          call->hangup();
-         return;
       }
-      camera->setState(Input::Playing);
-      cameraStream  = camera->getStreams()[0];
       cameraStream->subscribe(serverVideoStream);
       QXmppVideoFormat videoFormat;
       videoFormat.setFrameRate(30);
@@ -289,7 +304,7 @@ void MainWindow::callVideoModeChanged(QIODevice::OpenMode mode) {
       }
    } else if(mode == QIODevice::NotOpen) {
       qDebug() << "Closing device";
-      delete camera;
+      delete serverVideoStream;
       disconnect(&timer, SIGNAL(timeout()), this, SLOT(readFrames()));
       timer.stop();
    } else {
