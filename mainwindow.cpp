@@ -77,7 +77,7 @@ void MainWindow::codecChanged(const QString &codecName) {
    qDebug("Codec changed");
    QList<CodecID> codecs;
    if(codecName == "MJPEG")
-      codecs << CODEC_ID_MJPEG;
+      codecs << CODEC_ID_JPEG2000;
    else if(codecName == "H.264")
       codecs << CODEC_ID_H264;
    else
@@ -307,7 +307,7 @@ void MainWindow::callVideoModeChanged(QIODevice::OpenMode mode) {
       info.video.width = incomingFormat.frameWidth();
       info.video.height = incomingFormat.frameHeight();
       info.video.fps = incomingFormat.frameRate();
-      info.video.pixelFormat = PIX_FMT_YUV420P;
+      info.video.pixelFormat = incomingFormat.pixelFormat();
       if(playerVideoStream) ui->player->removeStream(playerVideoStream);
       playerVideoStream = ui->player->addStream(info);
       if(!timer.isActive()) {
