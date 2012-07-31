@@ -296,16 +296,17 @@ void MainWindow::callVideoModeChanged(QIODevice::OpenMode mode) {
       if(ui->comboBoxSize->currentText() == "640x480")
          videoFormat.setFrameSize(QSize(640,480));
       else if(ui->comboBoxSize->currentText() == "320x240")
-         videoFormat.setFrameSize(QSize(320,480));
+         videoFormat.setFrameSize(QSize(320,240));
       videoFormat.setPixelFormat(PIX_FMT_YUV420P);
       videoFormat.setGopSize(ui->spinBoxKeyFrame->value());
       videoFormat.setBitrate(ui->lineEditBitrate->text().toInt());
       call->videoChannel()->setEncoderFormat(videoFormat);
       StreamInfo info;
       info.type = Video;
-      info.video.width = 640;
-      info.video.height = 480;
-      info.video.fps = 30;
+      QXmppVideoFormat incomingFormat = call->videoChannel()->decoderFormat();
+      info.video.width = incomingFormat.frameWidth();
+      info.video.height = incomingFormat.frameHeight();
+      info.video.fps = incomingFormat.frameRate();
       info.video.pixelFormat = PIX_FMT_YUV420P;
       if(playerVideoStream) ui->player->removeStream(playerVideoStream);
       playerVideoStream = ui->player->addStream(info);
